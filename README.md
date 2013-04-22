@@ -136,8 +136,6 @@ but this didn't improve the results very much.
 
 Example results
 ----------------
-The following examples show the computed solutions of the magiceye images 
-found in the `example_images` directory.
 
 ![Alt text](http://i.imgur.com/AUmpOSr.png "Solution 1")
 
