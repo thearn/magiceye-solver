@@ -8,7 +8,7 @@ projection of the underlying image. This provides a decent contour outline of th
 tends to be lost.
 
 Requirements:
----------------
+--------------
 
 - Python 2.7+
 - Numpy 1.5+
