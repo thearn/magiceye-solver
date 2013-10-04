@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="Magiceye-solver : A python code to automatically &quot;solve&quot; magic eye autostereograms" />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Magiceye-solver</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/thearn/magiceye-solver">View on GitHub</a>
+
+          <h1 id="project_title">Magiceye-solver</h1>
+          <h2 id="project_tagline">A python code to automatically &quot;solve&quot; magic eye autostereograms</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/thearn/magiceye-solver/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/thearn/magiceye-solver/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <p><img src="http://i.imgur.com/AUmpOSr.png" alt="Alt text" title="Example"></p>
+
+<h1>
+<a name="magiceye-solver" class="anchor" href="#magiceye-solver"><span class="octicon octicon-link"></span></a>magiceye-solver</h1>
+
+<p>Are you as frustrated by not being able to see those magic eye optical illusions as I am? Well, now you're in luck.</p>
+
+<p>This is a  short python code that demonstrates how to automatically "solve" a magic eye autostereogram by estimating a 
+projection of the underlying image. This provides a decent contour outline of the hidden object, though most finer detail
+tends to be lost.</p>
+
+<h2>
+<a name="requirements" class="anchor" href="#requirements"><span class="octicon octicon-link"></span></a>Requirements:</h2>
+
+<ul>
+<li>Python 2.7+</li>
+<li>Numpy 1.5+</li>
+<li>Scipy 0.12+</li>
+</ul><p>Optional:</p>
+
+<ul>
+<li>scikit-image 0.8+ (code will attempt to import filtering functions for additional post processing, but will not raise an error if 
+library is not available)</li>
+</ul><h2>
+<a name="example-usages" class="anchor" href="#example-usages"><span class="octicon octicon-link"></span></a>Example usages:</h2>
+
+<p>This code can be used in three different ways.</p>
+
+<h3>
+<a name="run-directly-with-a-command-line-argument" class="anchor" href="#run-directly-with-a-command-line-argument"><span class="octicon octicon-link"></span></a>Run directly, with a command line argument:</h3>
+
+<p>Run <code>magic_eye_solver.py</code> with the filename of the image that you would like to
+process passed as an argument:</p>
+
+<div class="highlight highlight-bash"><pre><span class="nv">$ </span>python magic_eye_solver.py <span class="s2">"example_images/example1.png"</span>
+</pre></div>
+
+<p>This generates text output:</p>
+
+<pre><code>Solving image example_images/example1.png...
+Saving solution to example_images/example1_solution.png...
+Saving joined to example_images/example1_joined.png...
+</code></pre>
+
+<p>This will generate <code>example1_solution.png</code> and <code>example1_joined.png</code> in the same
+directory as the original files, showing the computed solution and a side-by-side
+comparison of the original image and the solution, respectively.</p>
+
+<h3>
+<a name="run-directly-without-a-command-line-argument" class="anchor" href="#run-directly-without-a-command-line-argument"><span class="octicon octicon-link"></span></a>Run directly, without a command line argument:</h3>
+
+<p>If a filename is not specified, a list of png and jpg image files will be presented
+to the user, who will then be prompted to select from the file names shown.</p>
+
+<p>For example, we run the file directly, with no argument:</p>
+
+<div class="highlight highlight-bash"><pre><span class="nv">$ </span>python magic_eye_solver.py
+</pre></div>
+
+<p>Select all example files (example1.png through example7.png) from a generated list (notice that banner.png is not 
+selected by the user):</p>
+
+<pre><code>Please select from the following images:
+========================================
+(selection  filename)
+0 example_images/banner.png
+1 example_images/example1.png
+2 example_images/example2.png
+3 example_images/example3.png
+4 example_images/example4.png
+5 example_images/example5.png
+6 example_images/example6.png
+7 example_images/example7.png
+
+Make selections (separate by commas): 1,2,3,4,5,6,7
+
+Solving image example_images/example1.png...
+Saving solution to example_images/example1_solution.png...
+Saving joined to example_images/example1_joined.png...
+
+Solving image example_images/example2.png...
+Saving solution to example_images/example2_solution.png...
+Saving joined to example_images/example2_joined.png...
+
+Solving image example_images/example3.png...
+Saving solution to example_images/example3_solution.png...
+Saving joined to example_images/example3_joined.png...
+
+Solving image example_images/example4.png...
+Saving solution to example_images/example4_solution.png...
+Saving joined to example_images/example4_joined.png...
+
+Solving image example_images/example5.png...
+Saving solution to example_images/example5_solution.png...
+Saving joined to example_images/example5_joined.png...
+
+Solving image example_images/example6.png...
+Saving solution to example_images/example6_solution.png...
+Saving joined to example_images/example6_joined.png...
+
+Solving image example_images/example7.png...
+Saving solution to example_images/example7_solution.png...
+Saving joined to example_images/example7_joined.png...
+</code></pre>
+
+<h3>
+<a name="imported-and-used-as-a-library" class="anchor" href="#imported-and-used-as-a-library"><span class="octicon octicon-link"></span></a>Imported and used as a library:</h3>
+
+<p>The <code>solve_magiceye()</code> method can also be imported from <code>magic_eye_solver.py</code> and
+used in your own application like any other image/array processing function:</p>
+
+<div class="highlight highlight-python"><pre><span class="kn">from</span> <span class="nn">magic_eye_solver</span> <span class="kn">import</span> <span class="n">solve_magiceye</span>
+<span class="kn">import</span> <span class="nn">pylab</span> <span class="c">#matplotlib plotting</span>
+
+<span class="n">image</span> <span class="o">=</span> <span class="n">pylab</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="s">"example_images/example1.png"</span><span class="p">)</span> <span class="c">#load magiceye image</span>
+
+<span class="n">solution</span> <span class="o">=</span> <span class="n">solve_magiceye</span><span class="p">(</span><span class="n">image</span><span class="p">)</span> <span class="c">#solve it</span>
+
+<span class="n">pylab</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">solution</span><span class="p">,</span> <span class="n">cmap</span> <span class="o">=</span> <span class="n">pylab</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">gray</span><span class="p">)</span> <span class="c">#plot the solution</span>
+
+<span class="n">pylab</span><span class="o">.</span><span class="n">show</span><span class="p">()</span> <span class="c">#show the plot</span>
+
+</pre></div>
+
+<h2>
+<a name="how-it-works" class="anchor" href="#how-it-works"><span class="octicon octicon-link"></span></a>How it works:</h2>
+
+<ul>
+<li>For each of the R, G, and B channels of a magic eye image:
+
+<ol>
+<li>An autocorrelation is computed (via FFT) to find strong horizontal periodicities in the inputted image</li>
+<li>The sum of all horizontal translative shifts of the image up to the peak autocorrelation
+shift is computed. That is, the entire image is "smeared" horizontally by the distance determined in step 1.</li>
+<li>An edge detection and uniform filter is applied to clean up the resulting sum and help separate the cumulated noise 
+from useful objective information. </li>
+</ol>
+</li>
+<li>The most leptokurtotic (high in sample kurtosis) of three channels processed as above is returned as the solution
+that is most likely to have the clearest 2D grayscale projection of the underlying image. </li>
+</ul><h2>
+<a name="notes--todo-list" class="anchor" href="#notes--todo-list"><span class="octicon octicon-link"></span></a>Notes / todo list:</h2>
+
+<ul>
+<li>The post-process filtering should be improved to clean up the output a bit more. The solutions are kind of grainy.</li>
+<li>This certainly seems to work better for some autostereogram images than others, but still seems to give generally
+useful output for the test images I've been able to collect so far.</li>
+<li>Good alternative solution methods are likely to exist, so there is still plenty of
+experimentation left to do with this. </li>
+<li>I experimented with PCA and ICA (both as pre-processing the R, G, B channels and as post-processing of the results), 
+but this didn't improve the results very much.</li>
+</ul><h2>
+<a name="example-results" class="anchor" href="#example-results"><span class="octicon octicon-link"></span></a>Example results</h2>
+
+<p><img src="http://i.imgur.com/AUmpOSr.png" alt="Alt text" title="Solution 1"></p>
+
+<p><img src="http://i.imgur.com/77qq4xY.jpg" alt="Alt text" title="Solution 2"></p>
+
+<p><img src="http://i.imgur.com/WZVGvkX.jpg" alt="Alt text" title="Solution 3"></p>
+
+<p><img src="http://i.imgur.com/3H9zeCJ.jpg" alt="Alt text" title="Solution 4"></p>
+
+<p><img src="http://i.imgur.com/Xru4K0v.jpg" alt="Alt text" title="Solution 5"></p>
+
+<p><img src="http://i.imgur.com/fAuwqXZ.jpg" alt="Alt text" title="Solution 6"></p>
+
+<p><img src="http://i.imgur.com/WmVzQdv.jpg" alt="Alt text" title="Solution 7"></p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Magiceye-solver maintained by <a href="https://github.com/thearn">thearn</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
