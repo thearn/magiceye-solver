@@ -2,7 +2,7 @@ import logging
 import os
 import numpy as np
 import unittest
-from magiceye_solver import magiceye_solver, magiceye_solve_file
+from magiceye_solve import magiceye_solver, magiceye_solve_file
 from scipy.misc import lena
 import matplotlib as mpl
 mpl.use('Agg', warn=False)
