@@ -48,7 +48,7 @@ def post_process(img):
     return filt_2
 
 
-def solve(x):
+def magiceye_solver(x):
     """
     Solves the autostereogram image represented by the ndarray, x
     """
@@ -87,7 +87,7 @@ def magiceye_solve_file(fname, output_name=None):
         output_name = ''.join([fname.split(".")[0], '-solution.png'])
 
     image = plt.imread(fname)
-    solved = solve(image)
+    solved = magiceye_solver(image)
 
     f = plt.figure(frameon=False)
     ax = f.add_subplot(111)
