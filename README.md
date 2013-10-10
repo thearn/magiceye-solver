@@ -1,6 +1,7 @@
 ![Alt text](http://i.imgur.com/AUmpOSr.png "Example" )
 
 # magiceye-solver
+[![Build Status](https://travis-ci.org/thearn/magiceye-solver.png?branch=master)](https://travis-ci.org/thearn/magiceye-solver)
 
 This is a  short python code that demonstrates how to automatically "solve" a magic eye autostereogram by estimating a
 projection of the underlying image. This provides a decent contour outline of the hidden object, though most finer detail
