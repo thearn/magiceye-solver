@@ -1,9 +1,9 @@
 ![Alt text](http://i.imgur.com/AUmpOSr.png "Example" )
 
-# magiceye-solver
+# magiceye-solve
 [![Build Status](https://travis-ci.org/thearn/magiceye-solver.png?branch=master)](https://travis-ci.org/thearn/magiceye-solver)
 
-This is a  short python code that demonstrates how to automatically "solve" a magic eye autostereogram by estimating a
+A python code that demonstrates how to automatically "solve" a magic eye autostereogram by estimating a
 projection of the underlying image. This provides a decent contour outline of the hidden object, though most finer detail
 tends to be lost.
 
@@ -19,8 +19,27 @@ Optional:
 - scikit-image 0.8+ (code will attempt to import filtering functions for additional post processing, but will not raise an error if
 library is not available)
 
-Example usages:
-----------
+## Installation:
+There are two ways to install magiceye_solve.
+
+It's recommended that you install Numpy, Scipy, and Matplotlib first, either
+using binary installers (windows) or using a package manager (apt-get,
+homebrew, etc.).
+
+### Installing straight from PyPI:
+Run `pip install magiceye-solve`.
+
+### Installing from Source:
+Run `python setup.py build install` to install.
+
+Either method will also install the
+command line script `magiceye_solver` into the `Python/Scripts` directory.
+
+Automatic tests can be performed by running `magiceye_solve/test/test_stl.py`.
+
+
+## Examples
+
 This code can be used in two different ways.
 ### Run directly from the command line:
 
@@ -45,7 +64,7 @@ The `magiceye_solver()` and 'The `magiceye_solver_file()` functions can also be 
 used in your own application like any other image/array processing function:
 
 ```python
-from magiceye_solver import magiceye_solver, magiceye_solver_file
+from magiceye_solve import magiceye_solver, magiceye_solver_file
 import pylab #matplotlib plotting
 
 image = pylab.imread("image.jpg") #load magiceye image
@@ -67,8 +86,8 @@ magiceye_solver_file("image_3.jpg", output_name="image_3_output.png")
 ```
 
 
-How it works:
--------------
+## How it works:
+
 - For each of the R, G, and B channels of a magic eye image:
     1. An autocorrelation is computed (via FFT) to find strong horizontal periodicities in the inputted image
     2. The sum of all horizontal translative shifts of the image up to the peak autocorrelation
@@ -79,8 +98,8 @@ from useful objective information.
 The processed R, G and B channels are then concatenated into a single grayscale
 image, as output.
 
-Notes / todo list:
----------
+## Notes / todo list:
+
 - The post-process filtering should be improved to clean up the output a bit more. The solutions are kind of grainy.
 - This certainly seems to work better for some autostereogram images than others, but still seems to give generally
 useful output for the test images I've been able to collect so far.
@@ -89,8 +108,7 @@ experimentation left to do with this.
 - I experimented with PCA and ICA (both as pre-processing the R, G, B channels and as post-processing of the results),
 but this didn't improve the results very much.
 
-Example results
-----------------
+## Example results
 
 ![Alt text](http://i.imgur.com/AUmpOSr.png "Solution 1")
 
