@@ -3,6 +3,8 @@
 # magiceye-solve
 [![Build Status](https://travis-ci.org/thearn/magiceye-solver.png?branch=master)](https://travis-ci.org/thearn/magiceye-solver)
 
+UPDATE: fixed for Python 3.5+
+
 A python code that demonstrates how to automatically "solve" a magic eye autostereogram by estimating a
 projection of the underlying image. This provides a decent contour outline of the hidden object, though most finer detail
 tends to be lost.
@@ -10,7 +12,7 @@ tends to be lost.
 Requirements:
 --------------
 
-- Python 2.7+
+- Python 2.7+ or 3.5+
 - Numpy 1.5+
 - Scipy 0.12+
 
