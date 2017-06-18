@@ -1,8 +1,5 @@
 ![Alt text](http://i.imgur.com/AUmpOSr.png "Example" )
 
-# magiceye-solve
-[![Build Status](https://travis-ci.org/thearn/magiceye-solver.png?branch=master)](https://travis-ci.org/thearn/magiceye-solver)
-
 UPDATE: fixed for Python 3.5+
 
 A python code that demonstrates how to automatically "solve" a magic eye autostereogram by estimating a
