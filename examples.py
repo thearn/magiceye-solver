@@ -1,7 +1,7 @@
 import os
 import glob
 
-from magiceye_solver import magiceye_solve_file
+from magiceye_solve import magiceye_solve_file
 
 """
 Runs magiceye_solver on the images in the samples directory
