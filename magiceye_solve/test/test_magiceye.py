@@ -3,7 +3,7 @@ import os
 import numpy as np
 import unittest
 from magiceye_solve import magiceye_solver, magiceye_solve_file
-from scipy.misc import lena
+from scipy.misc import face
 import matplotlib as mpl
 mpl.use('Agg', warn=False)
 import matplotlib.pyplot as plt
@@ -16,13 +16,6 @@ logging.basicConfig(level=logging.DEBUG)
 
 class TestSTL(unittest.TestCase):
 
-    def test_magiceye_solve(self):
-
-        A = lena()
-        n = A.shape[1]
-        out = magiceye_solver(A)
-        assert out.shape[1] <= n
-
     def test_null(self):
 
         A = np.zeros((128, 128))
@@ -32,7 +25,7 @@ class TestSTL(unittest.TestCase):
     def test_magiceye_solve_file(self):
         f = plt.figure(frameon=False)
         ax = f.add_subplot(111)
-        plt.imshow(lena(), cmap=plt.cm.gray)
+        plt.imshow(face(), cmap=plt.cm.gray)
         ax.set_axis_off()
         ax.autoscale_view(True, True, True)
         f.savefig("test.png", bbox_inches='tight')
@@ -47,7 +40,7 @@ class TestSTL(unittest.TestCase):
     def test_cli(self):
         f = plt.figure(frameon=False)
         ax = f.add_subplot(111)
-        plt.imshow(lena(), cmap=plt.cm.gray)
+        plt.imshow(face(), cmap=plt.cm.gray)
         ax.set_axis_off()
         ax.autoscale_view(True, True, True)
         f.savefig("test.png", bbox_inches='tight')
