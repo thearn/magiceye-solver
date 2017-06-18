@@ -19,7 +19,7 @@ def offset(img):
     """
     img = img - img.mean()
     ac = fftconvolve(img, np.flipud(np.fliplr(img)), mode='same')
-    ac = ac[len(ac) / 2]
+    ac = ac[int(len(ac) / 2)]
     idx = np.where((ac - np.median(ac)) / ac.std() > 3)[0]
     diffs = []
     diffs = np.ediff1d(idx)
