@@ -6,10 +6,14 @@ import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
 try:
-    from skimage import filter as ski_filter
+    from skimage import filters as ski_filter
     from skimage import exposure
+    _SKIMAGE_AVAILABLE = True
 except ImportError:
+    # Ensure these are None if import fails, so checks later don't raise NameError
     ski_filter = None
+    exposure = None
+    _SKIMAGE_AVAILABLE = False
 
 from scipy.signal import fftconvolve
 
@@ -49,11 +53,11 @@ def post_process(img: np.ndarray) -> np.ndarray:
     """
     Post-processes the results using skimage filters if available.
     """
-    if ski_filter is None:
-        # Return input if skimage is not available or processing is skipped
+    # Use the boolean flag for a clearer check
+    if not _SKIMAGE_AVAILABLE:
         return img
-    # Assuming ski_filter.hprewitt and exposure.equalize_hist return ndarray
-    filt_1: np.ndarray = ski_filter.hprewitt(img)
+    # We know ski_filter and exposure are available if _SKIMAGE_AVAILABLE is True
+    filt_1: np.ndarray = ski_filter.prewitt(img)
     filt_2: np.ndarray = exposure.equalize_hist(filt_1)
     return filt_2
 
@@ -96,8 +100,12 @@ def magiceye_solver(x: np.ndarray) -> np.ndarray:
         filt_1: np.ndarray = ndimage.prewitt(shifted)
         filt_2: np.ndarray = ndimage.uniform_filter(filt_1, size=(5, 5))
 
-        if ski_filter:
+        # Use the boolean flag for the check
+        if _SKIMAGE_AVAILABLE:
             filt_2 = post_process(filt_2)
+        else:
+            print("Warning: Skimage filters not available, skipping post-processing.")
+        # Removed the else block that printed the warning
 
         filt_m, filt_n = filt_2.shape
         # Ensure indices are within bounds
