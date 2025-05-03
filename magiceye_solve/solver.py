@@ -184,6 +184,114 @@ def magiceye_solve_cli() -> None:
 
     magiceye_solve_file(src, output_name=fn)
 
+
+class InteractiveSolver:
+    """
+    Allows solving autostereograms with a user-defined offset.
+    """
+    def __init__(self, image: np.ndarray):
+        """
+        Initializes the solver with an image.
+
+        Args:
+            image: The input image as a NumPy array.
+        """
+        self.image: np.ndarray = image
+        self.shape: Tuple[int, ...] = image.shape
+        self.m: int
+        self.n: int
+        self.c: int = 1
+        self.color_image: bool
+
+        if len(self.shape) >= 3:
+            self.m, self.n, self.c = self.shape[0], self.shape[1], self.shape[2]
+            self.color_image = True
+        else:
+            self.m, self.n = self.shape[0], self.shape[1]
+            self.color_image = False
+
+        # Calculate the default offset for the first color channel or grayscale
+        first_channel: np.ndarray = self.image[:, :, 0] if self.color_image else self.image
+        self.default_offset: int = offset(first_channel)
+
+    def solve_with_offset(self, user_offset: int) -> np.ndarray:
+        """
+        Solves the autostereogram using a specified offset.
+
+        Args:
+            user_offset: The desired offset to use for shifting.
+
+        Returns:
+            The solved image as a NumPy array.
+        """
+        if user_offset <= 0:
+            print("Warning: User offset must be positive.")
+            # Return a copy of the original or an empty array? Let's return empty for clarity.
+            return np.zeros((self.m, self.n * self.c), dtype=float)
+
+        solution: np.ndarray = np.zeros((self.m, self.n * self.c), dtype=float)
+
+        for i in range(self.c):
+            color: np.ndarray
+            if self.color_image:
+                color = self.image[:, :, i]
+            else:
+                color = self.image
+
+            if color.std() == 0.0:
+                continue
+
+            # --- Shift using user_offset ---
+            m_ch, n_ch = color.shape
+            shifted: np.ndarray = np.zeros((m_ch, n_ch))
+            int_gap = int(user_offset) # Use user_offset here
+
+            # Ensure gap is not larger than image width for rolling
+            effective_gap = min(int_gap, n_ch)
+
+            for shift_amount in range(effective_gap):
+                 shifted += np.roll(color, -shift_amount, axis=1)
+
+            # Adjust slicing based on the effective gap used
+            shifted = shifted[:, :max(0, n_ch - effective_gap)]
+            # --- End Shift ---
+
+            if shifted.size == 0:
+                continue
+
+            filt_1: np.ndarray = ndimage.prewitt(shifted)
+            filt_2: np.ndarray = ndimage.uniform_filter(filt_1, size=(5, 5))
+
+            if _SKIMAGE_AVAILABLE:
+                filt_2 = post_process(filt_2)
+            # No warning needed here as it's handled in the main function
+
+            filt_m, filt_n = filt_2.shape
+            start_col = i * self.n # Use self.n for original width per channel
+            end_col = start_col + filt_n
+
+            # Ensure indices fit within the allocated solution array
+            if end_col > solution.shape[1]:
+                end_col = solution.shape[1]
+                filt_n = end_col - start_col
+
+            if filt_m > self.m:
+                filt_m = self.m
+
+            solution[:filt_m, start_col:end_col] = filt_2[:filt_m, :filt_n]
+
+        # The solution width should correspond to the original image width * channels
+        # The shifting logic already handles the reduction based on offset.
+        # We might not need the final slice adjustment like in the original function
+        # if the allocation `self.n * self.c` is correct. Let's keep it consistent for now.
+        final_cols = self.n * self.c
+        # However, the effective width of the *solved* part depends on the offset.
+        # The width of the result from shift_pic logic is n - offset.
+        final_cols_solved = max(0, self.n - effective_gap) * self.c
+        # Return the portion containing the actual result
+        return solution[:, :final_cols_solved]
+
+
 # Example of how to run from command line if needed:
 # if __name__ == "__main__":
 #     magiceye_solve_cli()

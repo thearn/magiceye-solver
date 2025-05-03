@@ -1,1 +1,1 @@
-from .solver import magiceye_solver, magiceye_solve_file
+from .solver import magiceye_solver, magiceye_solve_file, InteractiveSolver
