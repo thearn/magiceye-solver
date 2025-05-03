@@ -4,3 +4,4 @@ matplotlib
 pytest
 pooch
 scikit-image
+gradio
