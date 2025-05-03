@@ -4,7 +4,7 @@ import numpy as np
 import unittest
 import subprocess
 import sys
-from magiceye_solve import magiceye_solver, magiceye_solve_file
+# Removed direct import of magiceye_solver, magiceye_solve_file
 from scipy.datasets import face
 import matplotlib as mpl
 mpl.use('Agg') # Set backend before importing pyplot
@@ -18,110 +18,7 @@ Some basic tests for magiceye_solver
 
 logging.basicConfig(level=logging.DEBUG)
 
-class TestSTL(unittest.TestCase):
-
-    def test_null(self) -> None:
-        # Test with an all-zero image (should have std=0)
-        A: np.ndarray = np.zeros((128, 128))
-        # magiceye_solver should handle std=0 and return zeros matching output shape logic
-        # The offset calculation might return width, shift_pic might return zeros
-        # Let's check the expected output shape based on the implementation
-        # Offset will be width (128). shift_pic will return (128, 0).
-        # Filters applied to (128, 0) will result in (128, 0).
-        # Final solution shape should be (128, 0)
-        out: np.ndarray = magiceye_solver(A)
-        self.assertEqual(out.shape, (128, 0)) # Expect empty width due to offset=width
-
-    def test_magiceye_solve_file(self) -> None:
-        # Create a temporary test image file
-        test_file = "test_face.png"
-        solution_file = "test_face-solution.png"
-        try:
-            f: Figure = plt.figure(frameon=False)
-            ax: Axes = f.add_subplot(111)
-            # Use a known image like scipy.datasets.face
-            img_data = face(gray=True) # Use grayscale face
-            plt.imshow(img_data, cmap=plt.cm.gray)
-            ax.set_axis_off()
-            ax.autoscale_view(True, True, True)
-            f.savefig(test_file, bbox_inches='tight', pad_inches=0)
-            plt.close(f)
-
-            # Run the file solver function
-            magiceye_solve_file(test_file)
-
-            # Check if the solution file was created
-            self.assertTrue(os.path.exists(solution_file))
-
-            # Optional: Check if the solution file can be read and has content
-            try:
-                 solution_img = plt.imread(solution_file)
-                 self.assertGreater(solution_img.size, 0)
-            except Exception as e:
-                 self.fail(f"Failed to read solution file {solution_file}: {e}")
-
-        finally:
-            # Clean up created files
-            if os.path.exists(test_file):
-                os.remove(test_file)
-            if os.path.exists(solution_file):
-                os.remove(solution_file)
-
-    def test_cli(self) -> None:
-        # Create a temporary test image file
-        test_file = "test_cli.png"
-        solution_file = "test_cli-solution.png"
-        try:
-            f: Figure = plt.figure(frameon=False)
-            ax: Axes = f.add_subplot(111)
-            img_data = face(gray=True)
-            plt.imshow(img_data, cmap=plt.cm.gray)
-            ax.set_axis_off()
-            ax.autoscale_view(True, True, True)
-            f.savefig(test_file, bbox_inches='tight', pad_inches=0)
-            plt.close(f)
-
-            # Find the path to the current python interpreter
-            python_executable = sys.executable
-
-            # Run the CLI using 'python -m magiceye_solve.solver' for better env handling
-            # This assumes the solver module has a runnable block or entry point logic
-            # A better approach might be to directly call magiceye_solve_cli if possible
-            # Or use the installed script name if setup.py entry_points are configured
-            try:
-                # Try running as a module first
-                result: subprocess.CompletedProcess = subprocess.run(
-                    [python_executable, '-m', 'magiceye_solve.solver', test_file],
-                    capture_output=True, text=True, check=True, cwd=os.getcwd() # Run from project root
-                )
-            except subprocess.CalledProcessError as e:
-                 # If module execution fails, try the installed script name
-                 print(f"Running as module failed: {e.stderr}. Trying installed script 'magiceye_solver'...")
-                 try:
-                      result = subprocess.run(
-                           ['magiceye_solver', test_file],
-                           capture_output=True, text=True, check=True, cwd=os.getcwd()
-                      )
-                 except (subprocess.CalledProcessError, FileNotFoundError) as e2:
-                      print(f"CLI execution failed: {e2}")
-                      if isinstance(e2, subprocess.CalledProcessError):
-                           print(f"Stderr: {e2.stderr}")
-                      self.fail(f"CLI execution failed: {e2}")
-
-            # Check if the output file exists
-            if not os.path.exists(solution_file):
-                print(f"Assertion Failed: Output file '{solution_file}' not found.")
-                print(f"Subprocess stdout:\n{result.stdout}")
-                print(f"Subprocess stderr:\n{result.stderr}")
-            self.assertTrue(os.path.exists(solution_file))
-
-        finally:
-            # Clean up created files
-            if os.path.exists(test_file):
-                os.remove(test_file)
-            if os.path.exists(solution_file):
-                os.remove(solution_file)
-
+# Removed TestSTL class as it tested removed functionality
 
 class TestInteractiveSolver(unittest.TestCase):
 
