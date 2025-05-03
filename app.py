@@ -10,8 +10,8 @@ from magiceye_solve.solver import InteractiveSolver
 # Placeholder for the solver instance to avoid global state issues if possible
 # We will manage this within the Gradio interactions.
 
-def solve_and_display(solver_instance: InteractiveSolver, offset_value: int) -> np.ndarray:
-    """Solves the image with the given offset and returns the result."""
+def solve_and_display(solver_instance: InteractiveSolver, offset_value: int, channel_mode: str) -> np.ndarray:
+    """Solves the image with the given offset and channel mode, returns the result."""
     if solver_instance is None:
         # Handle case where solver hasn't been initialized (e.g., no image uploaded)
         # Return a blank image or placeholder
@@ -20,8 +20,8 @@ def solve_and_display(solver_instance: InteractiveSolver, offset_value: int) -> 
     # Ensure offset is an integer
     offset_value = int(offset_value)
 
-    # Call the solver
-    solved_image = solver_instance.solve_with_offset(offset_value)
+    # Call the solver with the selected channel mode
+    solved_image = solver_instance.solve_with_offset(offset_value, channel_mode=channel_mode)
 
     # Normalize and convert for display if necessary
     if solved_image.size > 0:
@@ -49,13 +49,19 @@ def solve_and_display(solver_instance: InteractiveSolver, offset_value: int) -> 
         # Return a small blank image if solving failed
         solved_image = np.zeros((100, 100), dtype=np.uint8)
 
+    # Handle potential single-channel output from 'average' mode for display
+    if solved_image.ndim == 2:
+        # Convert grayscale to RGB for consistent display in Gradio Image component
+        solved_image = np.stack((solved_image,)*3, axis=-1)
+
     return solved_image
 
 def process_image(uploaded_image: np.ndarray):
     """Processes the uploaded image, initializes the solver, and sets up UI."""
+    default_channel_mode = "separate" # Default mode for initial solve
     if uploaded_image is None:
         # No image uploaded yet, return default/empty states
-        return None, gr.update(visible=False), None # Image, Slider, Solver State
+        return None, gr.update(visible=False), None, gr.update(value=default_channel_mode) # Image, Slider, Solver State, Channel Mode
 
     try:
         # Initialize the solver with the uploaded image
@@ -69,10 +75,10 @@ def process_image(uploaded_image: np.ndarray):
         # Ensure default is within bounds
         default_offset = max(min_offset, min(default_offset, max_offset))
 
-        # Perform initial solve with the default offset
-        initial_solution = solve_and_display(solver, default_offset)
+        # Perform initial solve with the default offset and default channel mode
+        initial_solution = solve_and_display(solver, default_offset, default_channel_mode)
 
-        # Update UI elements: show solved image, configure and show slider
+        # Update UI elements: show solved image, configure and show slider, set channel mode
         slider_update = gr.update(
             minimum=min_offset,
             maximum=max_offset,
@@ -81,17 +87,17 @@ def process_image(uploaded_image: np.ndarray):
             label=f"Stereogram Offset (Default: {solver.default_offset}, Max: {max_offset})",
             visible=True
         )
-        # Return the initial solution, the updated slider config, and the solver instance
-        return initial_solution, slider_update, solver
+        # Return the initial solution, updated slider config, solver instance, and default channel mode
+        return initial_solution, slider_update, solver, gr.update(value=default_channel_mode)
 
     except ValueError as e:
         print(f"Error initializing solver: {e}")
         gr.Warning(f"Could not process image. Error: {e}")
-        return None, gr.update(visible=False), None
+        return None, gr.update(visible=False), None, gr.update(value=default_channel_mode)
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         gr.Error("An unexpected error occurred during image processing.")
-        return None, gr.update(visible=False), None
+        return None, gr.update(visible=False), None, gr.update(value=default_channel_mode)
 
 
 # --- Gradio Interface using Blocks ---
@@ -105,6 +111,12 @@ with gr.Blocks() as demo:
     with gr.Row():
         with gr.Column(scale=1):
             image_input = gr.Image(type="numpy", label="Upload Autostereogram")
+            channel_mode_radio = gr.Radio(
+                ["separate", "average"],
+                label="Color Channel Mode",
+                value="separate",
+                info="How to handle color channels. 'Separate' processes each independently. 'Average' converts to grayscale first."
+            )
             offset_slider = gr.Slider(
                 minimum=1, maximum=100, step=1, # Placeholder values
                 label="Stereogram Offset",
@@ -112,21 +124,30 @@ with gr.Blocks() as demo:
                 visible=False # Initially hidden
             )
         with gr.Column(scale=1):
-            image_output = gr.Image(label="Solved Image")
+            image_output = gr.Image(label="Solved Image", type="numpy") # Ensure output type matches input for solve_and_display
 
+    # --- Event Handling ---
     # --- Event Handling ---
     # 1. When a new image is uploaded:
     image_input.change(
         fn=process_image,
         inputs=[image_input],
-        outputs=[image_output, offset_slider, solver_state],
+        outputs=[image_output, offset_slider, solver_state, channel_mode_radio], # Added channel_mode_radio output
         show_progress="full"
     )
 
     # 2. When the slider value changes (on release):
     offset_slider.release(
         fn=solve_and_display,
-        inputs=[solver_state, offset_slider],
+        inputs=[solver_state, offset_slider, channel_mode_radio], # Added channel_mode_radio input
+        outputs=[image_output],
+        show_progress="minimal"
+    )
+
+    # 3. When the channel mode changes:
+    channel_mode_radio.change(
+        fn=solve_and_display,
+        inputs=[solver_state, offset_slider, channel_mode_radio], # Use current slider value
         outputs=[image_output],
         show_progress="minimal"
     )
