@@ -1,4 +1,3 @@
-[![Build Status](https://travis-ci.org/thearn/magiceye-solver.svg?branch=master)](https://travis-ci.org/thearn/magiceye-solver)
 
 ![Alt text](http://i.imgur.com/AUmpOSr.png "Example" )
 
