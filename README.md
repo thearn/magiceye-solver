@@ -1,4 +1,15 @@
 
+---
+title: Magic Eye Solver
+emoji: 👀
+colorFrom: blue
+colorTo: green
+sdk: gradio
+sdk_version: 4.31.0 
+app_file: app.py
+pinned: false
+---
+
 ![Alt text](http://i.imgur.com/AUmpOSr.png "Example" )
 
 UPDATE: fixed for Python 3.5+
