@@ -1,0 +1,6 @@
+numpy
+scipy
+matplotlib
+pytest
+pooch
+scikit-image

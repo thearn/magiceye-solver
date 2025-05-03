@@ -2,10 +2,12 @@ import logging
 import os
 import numpy as np
 import unittest
+import subprocess
+import sys
 from magiceye_solve import magiceye_solver, magiceye_solve_file
-from scipy.misc import face
+from scipy.datasets import face
 import matplotlib as mpl
-mpl.use('Agg', warn=False)
+mpl.use('Agg')
 import matplotlib.pyplot as plt
 """
 Some basic tests for magiceye_solver
@@ -47,10 +49,32 @@ class TestSTL(unittest.TestCase):
         plt.close()
 
         import os
-        os.system('magiceye_solver test.png')
-        assert os.path.exists("test-solution.png")
+        # Use subprocess to run the CLI script with the current interpreter
+        # Note: Running the module directly might not pick up the entry point correctly depending on installation.
+        # A more robust way might be to find the script path if installed.
+        # For now, we assume the 'magiceye_solver' script installed via entry_points is available in the PATH.
+        try:
+            # Execute the installed command-line script directly
+            result = subprocess.run(['magiceye_solver', 'test.png'], capture_output=True, text=True, check=True)
+        except subprocess.CalledProcessError as e:
+             print(f"CLI execution failed: {e.stderr}")
+             raise e
+        except FileNotFoundError:
+             # This might happen if the script isn't in the PATH (e.g., venv not activated correctly)
+             print("Command 'magiceye_solver' not found. Ensure the package is installed and the environment is active.")
+             raise
+
+        # Check if the output file exists, provide debug info if not
+        output_file = "test-solution.png"
+        if not os.path.exists(output_file):
+            print(f"Assertion Failed: Output file '{output_file}' not found.")
+            print(f"Subprocess stdout:\n{result.stdout}")
+            print(f"Subprocess stderr:\n{result.stderr}")
+        assert os.path.exists(output_file)
+
+        # Cleanup
         os.remove("test.png")
-        os.remove("test-solution.png")
+        os.remove(output_file)
 
 if __name__ == '__main__':
     unittest.main()

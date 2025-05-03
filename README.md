@@ -11,9 +11,10 @@ tends to be lost.
 Requirements:
 --------------
 
-- Python 2.7+ or 3.5+
+- Python 3.5+
 - Numpy 1.5+
 - Scipy 0.12+
+- Matplotlib
 
 Optional:
 
@@ -27,16 +28,18 @@ It's recommended that you install Numpy, Scipy, and Matplotlib first, either
 using binary installers (windows) or using a package manager (apt-get,
 homebrew, etc.).
 
-### Installing straight from PyPI:
-Run `pip install magiceye-solve`.
-
 ### Installing from Source:
-Run `python setup.py build install` to install.
 
-Either method will also install the
-command line script `magiceye_solver` into the `Python/Scripts` directory.
+1.  Clone the repository.
+2.  Install dependencies: `pip install -r requirements.txt`
+3.  Install the package in editable mode: `pip install -e .`
 
-Automatic tests can be performed by running `magiceye_solve/test/test_stl.py`.
+This will install the package and make the command line script `magiceye_solver` available in your environment.
+
+Tests can be run using `pytest` from the project's root directory:
+```bash
+pytest
+```
 
 
 ## Examples

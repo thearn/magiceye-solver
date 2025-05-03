@@ -1,8 +1,8 @@
 from argparse import ArgumentParser
 import numpy as np
-from scipy.ndimage import filters
+from scipy import ndimage
 import matplotlib as mpl
-mpl.use('Agg', warn=False)
+mpl.use('Agg')
 import matplotlib.pyplot as plt
 try:
     from skimage import filter as ski_filter
@@ -68,8 +68,8 @@ def magiceye_solver(x):
         if color.std() == 0.0:
             continue
         shifted = shift_pic(color)
-        filt_1 = filters.prewitt(shifted)
-        filt_2 = filters.uniform_filter(filt_1, size=(5, 5))
+        filt_1 = ndimage.prewitt(shifted)
+        filt_2 = ndimage.uniform_filter(filt_1, size=(5, 5))
         if ski_filter:
             filt_2 = post_process(filt_2)
         m, n = filt_2.shape
