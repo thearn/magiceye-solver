@@ -9,6 +9,8 @@ from scipy.datasets import face
 import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
+from matplotlib.axes import Axes
 """
 Some basic tests for magiceye_solver
 """
@@ -18,15 +20,15 @@ logging.basicConfig(level=logging.DEBUG)
 
 class TestSTL(unittest.TestCase):
 
-    def test_null(self):
+    def test_null(self) -> None:
 
-        A = np.zeros((128, 128))
-        out = magiceye_solver(A)
+        A: np.ndarray = np.zeros((128, 128))
+        out: np.ndarray = magiceye_solver(A)
         assert (out == 0.0).all()
 
-    def test_magiceye_solve_file(self):
-        f = plt.figure(frameon=False)
-        ax = f.add_subplot(111)
+    def test_magiceye_solve_file(self) -> None:
+        f: Figure = plt.figure(frameon=False)
+        ax: Axes = f.add_subplot(111)
         plt.imshow(face(), cmap=plt.cm.gray)
         ax.set_axis_off()
         ax.autoscale_view(True, True, True)
@@ -39,9 +41,9 @@ class TestSTL(unittest.TestCase):
         os.remove("test.png")
         os.remove("test-solution.png")
 
-    def test_cli(self):
-        f = plt.figure(frameon=False)
-        ax = f.add_subplot(111)
+    def test_cli(self) -> None:
+        f: Figure = plt.figure(frameon=False)
+        ax: Axes = f.add_subplot(111)
         plt.imshow(face(), cmap=plt.cm.gray)
         ax.set_axis_off()
         ax.autoscale_view(True, True, True)
@@ -55,7 +57,7 @@ class TestSTL(unittest.TestCase):
         # For now, we assume the 'magiceye_solver' script installed via entry_points is available in the PATH.
         try:
             # Execute the installed command-line script directly
-            result = subprocess.run(['magiceye_solver', 'test.png'], capture_output=True, text=True, check=True)
+            result: subprocess.CompletedProcess = subprocess.run(['magiceye_solver', 'test.png'], capture_output=True, text=True, check=True)
         except subprocess.CalledProcessError as e:
              print(f"CLI execution failed: {e.stderr}")
              raise e
@@ -65,7 +67,7 @@ class TestSTL(unittest.TestCase):
              raise
 
         # Check if the output file exists, provide debug info if not
-        output_file = "test-solution.png"
+        output_file: str = "test-solution.png"
         if not os.path.exists(output_file):
             print(f"Assertion Failed: Output file '{output_file}' not found.")
             print(f"Subprocess stdout:\n{result.stdout}")
