@@ -21,19 +21,13 @@ Optional:
 library is not available)
 
 ## Installation:
-There are two ways to install magiceye_solve.
 
-It's recommended that you install Numpy, Scipy, and Matplotlib first, either
+It's recommended that you install Numpy, Scipy, Matplotlib, and Gradio first, either
 using binary installers (windows) or using a package manager (apt-get,
 homebrew, etc.).
 
-### Installing from Source:
-
 1.  Clone the repository.
 2.  Install dependencies: `pip install -r requirements.txt`
-3.  Install the package in editable mode: `pip install -e .`
-
-This will install the package and make the command line script `magiceye_solver` available in your environment.
 
 Tests can be run using `pytest` from the project's root directory:
 ```bash
@@ -43,28 +37,21 @@ pytest
 
 ## Examples
 
-This code can be used in two different ways.
-### Run directly from the command line:
+There are two main ways to use this code:
 
-Run `magiceye_solver` with the filename of the image that you would like to
-process passed as an argument:
+### Running the Gradio Web App:
 
-For example:
-```bash
-$ magiceye_solver image.jpg
-```
+The easiest way to try out the solver is by running the included Gradio web application.
 
-This will produce an output file named `image-solution.png` which displays the
-solution of the autostereogram.
-The output filename can also be specified directly:
-
-```bash
-$ magiceye_solver image.jpg -o image_output.png
-```
+1.  Make sure you have installed the dependencies (see Installation section).
+2.  Run the app from the project's root directory:
+    ```bash
+    python app.py
+    ```
+3.  This will launch a web interface (usually at http://127.0.0.1:7860) where you can upload your own Magic Eye images or use the provided samples to see the solver in action.
 
 ### Imported and used as a library:
-The `magiceye_solver()` and 'The `magiceye_solver_file()` functions can also be imported and
-used in your own application like any other image/array processing function:
+The `magiceye_solver()` and `magiceye_solver_file()` functions can also be imported and used in your own Python application like any other image/array processing function:
 
 ```python
 from magiceye_solve import magiceye_solver, magiceye_solver_file
