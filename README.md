@@ -12,7 +12,7 @@ pinned: false
 
 ![Alt text](http://i.imgur.com/AUmpOSr.png "Example" )
 
-UPDATE: fixed for Python 3.5+
+UPDATE: fixed for Python 3.5
 
 A python code that demonstrates how to automatically "solve" a magic eye autostereogram by estimating a
 projection of the underlying image. This provides a decent contour outline of the hidden object, though most finer detail
