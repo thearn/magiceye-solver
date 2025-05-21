@@ -111,6 +111,19 @@ with gr.Blocks() as demo:
     with gr.Row():
         with gr.Column(scale=1):
             image_input = gr.Image(type="numpy", label="Upload Autostereogram")
+            gr.Examples(
+                examples=[
+                    ["examples/1.jpg"],
+                    ["examples/2.jpg"],
+                    ["examples/3.jpg"],
+                    ["examples/4.jpg"],
+                    ["examples/5.gif"],
+                    ["examples/6.jpg"],
+                    ["examples/7.jpg"],
+                ],
+                inputs=[image_input],
+                label="Example Images"
+            )
             channel_mode_radio = gr.Radio(
                 ["separate", "average"],
                 label="Color Channel Mode",
