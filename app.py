@@ -1,3 +1,9 @@
+import subprocess
+import sys
+
+# Print installed packages for debugging Hugging Face Spaces environment
+subprocess.run([sys.executable, "-m", "pip", "freeze"])
+
 import gradio as gr
 import numpy as np
 import matplotlib.pyplot as plt
