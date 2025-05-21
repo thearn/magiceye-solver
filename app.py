@@ -269,12 +269,11 @@ with gr.Blocks() as demo:
 
     with gr.Row():
         with gr.Column(scale=1):
-            image_input = gr.Image(type="numpy", label="Upload Autostereogram")
+            image_input = gr.Image(type="numpy", label="Upload Autostereogram", height=400)
             gr.Examples(
                 examples=[
                     ["examples/1.jpg"],
                     ["examples/2.jpg"],
-                    ["examples/3.jpg"],
                     ["examples/3.jpg"],
                     ["examples/4.jpg"],
                     ["examples/5.gif"],
@@ -291,7 +290,7 @@ with gr.Blocks() as demo:
                 info="How to handle color channels. 'Separate' processes each independently. 'Average' converts to grayscale first."
             )
         with gr.Column(scale=1):
-            image_output = gr.Image(label="Solved Image", type="numpy") # Ensure output type matches input for solve_and_display
+            image_output = gr.Image(label="Solved Image", type="numpy", height=400) # Ensure output type matches input for solve_and_display
             autocorrelation_plot = gr.Plot(label="Autocorrelation Curve", visible=False)
             offset_slider = gr.Slider(
                 minimum=1, maximum=100, step=1, # Placeholder values
