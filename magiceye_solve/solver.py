@@ -17,7 +17,7 @@ except ImportError:
 
 from scipy.signal import fftconvolve
 
-def offset(img: np.ndarray) -> int:
+def offset(img: np.ndarray) -> Tuple[int, np.ndarray, np.ndarray, np.ndarray]:
     """
     Calculates the offset that defines the stereoscopic effect.
     """
@@ -26,11 +26,11 @@ def offset(img: np.ndarray) -> int:
     # Ensure ac has the expected dimension before indexing
     if ac.ndim < 1 or ac.shape[0] < 1:
          # Handle case where convolution result is unexpected (e.g., empty image input)
-         return img.shape[1] # Fallback
+         return img.shape[1], np.array([]), np.array([]), np.array([]) # Fallback
     ac_center_row = ac[int(ac.shape[0] / 2)]
     # Check if center row is valid before proceeding
     if ac_center_row.size == 0 or ac_center_row.std() == 0:
-         return img.shape[1] # Fallback if row is empty or has no variation
+         return img.shape[1], np.array([]), np.array([]), np.array([]) # Fallback if row is empty or has no variation
 
     # Use try-except for division by zero or invalid value in std
     try:
@@ -47,14 +47,15 @@ def offset(img: np.ndarray) -> int:
     diffs: np.ndarray = np.ediff1d(idx)
     if diffs.size == 0:
         # Fallback to image width if no significant peaks found
-        return img.shape[1]
+        return img.shape[1], ac_center_row, idx, diffs
     # Use try-except for potential empty diffs if idx had <= 1 element
     try:
         max_diff = np.max(diffs)
         # Ensure max_diff is a reasonable value (e.g., not larger than image width)
-        return min(max_diff, img.shape[1])
+        return min(max_diff, img.shape[1]), ac_center_row, idx, diffs
     except ValueError:
-        return img.shape[1] # Fallback if diffs is empty
+        # Fallback if diffs is empty, return image width and an empty array for the curve
+        return img.shape[1], np.array([]), np.array([]), np.array([])
 
 def shift_pic(img: np.ndarray, gap: int) -> np.ndarray:
     """
@@ -139,14 +140,17 @@ class InteractiveSolver:
              # Handle unexpected shapes during init
              raise ValueError(f"Unsupported image shape: {self.shape}")
 
-        # Calculate the default offset using the first channel or grayscale
+        # Calculate the default offset and autocorrelation curve using the first channel or grayscale
         first_channel: np.ndarray = self.image[:, :, 0] if self.color_image else self.image
         # Ensure the first channel is valid before calculating offset
         if first_channel.size > 0 and first_channel.std() > 0:
-             self.default_offset: int = offset(first_channel)
+             self.default_offset, self.autocorrelation_curve, self.autocorrelation_peak_indices, self.autocorrelation_peak_diffs = offset(first_channel)
         else:
              # Handle cases like all-black images or invalid input
              self.default_offset: int = self.n # Fallback offset
+             self.autocorrelation_curve: np.ndarray = np.array([]) # Initialize as empty if no curve
+             self.autocorrelation_peak_indices: np.ndarray = np.array([])
+             self.autocorrelation_peak_diffs: np.ndarray = np.array([])
 
     def solve_with_offset(self, user_offset: int, channel_mode: str = 'separate') -> np.ndarray:
         """
@@ -165,10 +169,8 @@ class InteractiveSolver:
             print("Warning: User offset must be positive. Returning empty array.")
             # Determine return shape based on mode for zero offset
             if channel_mode == 'average':
-                 # Average mode returns single channel, width n
                  return np.zeros((self.m, self.n), dtype=float)
             else: # 'separate' or invalid mode (defaults to separate shape)
-                 # Separate mode returns concatenated channels, width n*c
                  return np.zeros((self.m, self.n * self.c), dtype=float)
 
         int_gap = int(user_offset)
@@ -178,37 +180,29 @@ class InteractiveSolver:
 
         if channel_mode == 'average':
             if not self.color_image:
-                # If not color, treat as grayscale
                 img_to_process = self.image
             else:
-                # Average the channels
                 img_to_process = np.mean(self.image, axis=2)
 
             if img_to_process.size == 0 or img_to_process.std() == 0.0:
-                # Return shape for average mode (single channel result)
                 return np.zeros((self.m, final_width_per_channel), dtype=float)
 
-            # --- Shift using user_offset ---
             shifted: np.ndarray = shift_pic(img_to_process, effective_gap)
 
             if shifted.size == 0:
-                 return np.zeros((self.m, 0), dtype=float) # Empty result if width becomes 0
+                 return np.zeros((self.m, 0), dtype=float)
 
-            # --- Apply Filters ---
             try:
                  filt_1: np.ndarray = ndimage.prewitt(shifted)
                  filt_2: np.ndarray = ndimage.uniform_filter(filt_1, size=(5, 5))
                  if _SKIMAGE_AVAILABLE:
                       filt_2 = post_process(filt_2)
-                 return filt_2 # Return the single processed channel
+                 return filt_2
             except Exception as e:
                  print(f"Error filtering averaged image: {e}")
-                 # Return empty array with expected shape on error
                  return np.zeros((self.m, final_width_per_channel), dtype=float)
 
         elif channel_mode == 'separate':
-             # --- Separate channel processing ---
-             # Allocate solution array for concatenated results
              solution: np.ndarray = np.zeros((self.m, final_width_per_channel * self.c), dtype=float)
 
              for i in range(self.c):
@@ -216,33 +210,28 @@ class InteractiveSolver:
                  if self.color_image:
                       color = self.image[:, :, i]
                  else:
-                      # If not color image, process only once
                       if i > 0: break
                       color = self.image
 
                  if color.size == 0 or color.std() == 0.0:
-                      continue # Skip this channel if it's blank or empty
+                      continue
 
-                 # --- Shift using user_offset ---
                  shifted: np.ndarray = shift_pic(color, effective_gap)
 
                  if shifted.size == 0:
-                      continue # Skip if shifting results in empty array
+                      continue
 
-                 # --- Apply Filters ---
                  try:
                       filt_1: np.ndarray = ndimage.prewitt(shifted)
                       filt_2: np.ndarray = ndimage.uniform_filter(filt_1, size=(5, 5))
                       if _SKIMAGE_AVAILABLE:
                            filt_2 = post_process(filt_2)
 
-                      # --- Place into solution array ---
                       filt_m, filt_n = filt_2.shape
                       if filt_n != final_width_per_channel:
-                           # Handle potential width mismatch (defensive)
                            print(f"Warning: Filtered channel {i} width mismatch. Expected {final_width_per_channel}, got {filt_n}.")
-                           if filt_n < final_width_per_channel: continue # Skip if too small
-                           filt_2 = filt_2[:, :final_width_per_channel] # Truncate if too large
+                           if filt_n < final_width_per_channel: continue
+                           filt_2 = filt_2[:, :final_width_per_channel]
                            filt_n = final_width_per_channel
 
                       start_col = i * final_width_per_channel
@@ -253,11 +242,10 @@ class InteractiveSolver:
 
                  except Exception as e:
                       print(f"Error processing channel {i}: {e}")
-                      continue # Skip channel on error
+                      continue
 
              return solution
 
         else:
              print(f"Error: Invalid channel_mode '{channel_mode}'. Use 'separate' or 'average'.")
-             # Return empty array matching default 'separate' shape
              return np.zeros((self.m, final_width_per_channel * self.c), dtype=float)
