@@ -75,7 +75,7 @@ def create_autocorrelation_plot(autocorrelation_curve: np.ndarray, current_slide
                 sizes[selected_peak_idx] = 60  # Make the selected peak larger
                 
             # Plot all peaks
-            ax.scatter(shifted_peak_indices, peak_y_values, c=colors, s=sizes, marker='o', label='Detected Peaks')
+            #ax.scatter(shifted_peak_indices, peak_y_values, c=colors, s=sizes, marker='o', label='Detected Peaks')
             
             # Specifically label the peak used for the selected offset
             if selected_peak_idx is not None:
@@ -106,13 +106,6 @@ def create_autocorrelation_plot(autocorrelation_curve: np.ndarray, current_slide
                                       fontsize=9, 
                                       color='red',
                                       bbox=dict(boxstyle='round,pad=0.3', fc='yellow', alpha=0.7))
-
-        # Add text for max_diff, which is the raw max difference found by the solver
-        if peak_diffs.size > 0:
-            max_diff_val = np.max(peak_diffs)
-            ax.text(0.95, 0.95, f'Raw Max Diff: {max_diff_val}', transform=ax.transAxes,
-                    fontsize=10, verticalalignment='top', horizontalalignment='right',
-                    bbox=dict(boxstyle='round,pad=0.5', fc='yellow', alpha=0.5))
 
         # Set appropriate x-axis limits to focus on relevant part of the curve
         # Use this same limit for the slider's range
