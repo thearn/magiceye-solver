@@ -4,4 +4,4 @@ matplotlib
 pytest
 pooch
 scikit-image
-gradio
+gradio>=4.44.1
