@@ -115,7 +115,9 @@ def create_autocorrelation_plot(autocorrelation_curve: np.ndarray, current_slide
                     bbox=dict(boxstyle='round,pad=0.5', fc='yellow', alpha=0.5))
 
         # Set appropriate x-axis limits to focus on relevant part of the curve
-        ax.set_xlim([0, min(700, current_slider_offset * 2, solver_calculated_offset * 2)])
+        # Use this same limit for the slider's range
+        x_limit = min(700, current_slider_offset * 2, solver_calculated_offset * 2)
+        ax.set_xlim([0, x_limit])
         
         # Add title and labels
         ax.set_title("Autocorrelation Curve")
@@ -200,7 +202,8 @@ def process_image(uploaded_image: np.ndarray):
 
         # Determine slider parameters
         min_offset = 1
-        max_offset = solver.n - 1 # Max useful offset
+        # Set max offset to same value used for plot x-axis limit
+        max_offset = min(700, solver.default_offset * 2)
         default_offset = solver.default_offset
         # Ensure default is within bounds
         default_offset = max(min_offset, min(default_offset, max_offset))
@@ -237,10 +240,7 @@ def process_image(uploaded_image: np.ndarray):
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         gr.Error("An unexpected error occurred during image processing.")
-        return None, gr.Slider(visible=False), None, gr.Radio(value=default_channel_mode), None
-
-
-# --- Gradio Interface using Blocks ---
+        return None, gr.Slider(visible=False), None, gr.Radio(value=default_channel_mode), None    # --- Gradio Interface using Blocks ---
 with gr.Blocks() as demo:
     gr.Markdown("# Magic Eye Solver")
     gr.Markdown("Upload an autostereogram (Magic Eye image) to reveal the hidden 3D image. Adjust the offset slider to fine-tune the result.")
@@ -271,15 +271,15 @@ with gr.Blocks() as demo:
                 value="average",
                 info="How to handle color channels. 'Separate' processes each independently. 'Average' converts to grayscale first."
             )
+        with gr.Column(scale=1):
+            image_output = gr.Image(label="Solved Image", type="numpy") # Ensure output type matches input for solve_and_display
+            autocorrelation_plot = gr.Plot(label="Autocorrelation Curve", visible=False)
             offset_slider = gr.Slider(
                 minimum=1, maximum=100, step=1, # Placeholder values
                 label="Stereogram Offset",
                 interactive=True,
                 visible=False # Initially hidden
             )
-        with gr.Column(scale=1):
-            image_output = gr.Image(label="Solved Image", type="numpy") # Ensure output type matches input for solve_and_display
-            autocorrelation_plot = gr.Plot(label="Autocorrelation Curve", visible=False)
 
     # --- Event Handling ---
     # 1. When a new image is uploaded:
@@ -291,9 +291,15 @@ with gr.Blocks() as demo:
         api_name=False  # Disable API exposure for this event
     )
 
+    # Define a function that only updates the plot and image, not the slider range
+    def solve_and_display_only(solver_instance, offset_value, channel_mode):
+        solved_image, plot_figure = solve_and_display(solver_instance, offset_value, channel_mode)
+        # We don't update the slider range here, just return the solved image and plot
+        return solved_image, plot_figure
+
     # 2. When the slider value changes (on release):
     offset_slider.release(
-        fn=solve_and_display,
+        fn=solve_and_display_only,
         inputs=[solver_state, offset_slider, channel_mode_radio],
         outputs=[image_output, autocorrelation_plot],
         show_progress="minimal",
@@ -302,7 +308,7 @@ with gr.Blocks() as demo:
 
     # 3. When the channel mode changes:
     channel_mode_radio.change(
-        fn=solve_and_display,
+        fn=solve_and_display_only,
         inputs=[solver_state, offset_slider, channel_mode_radio],
         outputs=[image_output, autocorrelation_plot],
         show_progress="minimal",
