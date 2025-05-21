@@ -343,8 +343,10 @@ with gr.Blocks() as demo:
         api_name=False
     )
 
+    gr.Markdown("---") # Separator
+    gr.Markdown("Find this project on [GitHub](https://github.com/thearn/magiceye-solver)")
+
 if __name__ == "__main__":
     # For Hugging Face Spaces compatibility
     demo.queue()  # Enable queuing for better handling of concurrent users
-    demo.launch(show_error=True)
     demo.launch(show_error=True)
