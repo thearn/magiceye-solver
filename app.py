@@ -9,6 +9,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from magiceye_solve.solver import InteractiveSolver
 
+# Set warning mode to ignore or control certain unnecessary warnings
+import warnings
+warnings.filterwarnings("ignore", message=".*Trying to detect.*share=True.*")
+
 # Store the solver instance globally within the session state if possible,
 # or recreate it when needed. Gradio state management can be tricky.
 # For simplicity here, we might recreate it or pass it around.
@@ -67,7 +71,7 @@ def process_image(uploaded_image: np.ndarray):
     default_channel_mode = "separate" # Default mode for initial solve
     if uploaded_image is None:
         # No image uploaded yet, return default/empty states
-        return None, gr.update(visible=False), None, gr.update(value=default_channel_mode) # Image, Slider, Solver State, Channel Mode
+        return None, gr.Slider(visible=False), None, gr.Radio(value=default_channel_mode) # Image, Slider, Solver State, Channel Mode
 
     try:
         # Initialize the solver with the uploaded image
@@ -85,7 +89,7 @@ def process_image(uploaded_image: np.ndarray):
         initial_solution = solve_and_display(solver, default_offset, default_channel_mode)
 
         # Update UI elements: show solved image, configure and show slider, set channel mode
-        slider_update = gr.update(
+        slider_update = gr.Slider(
             minimum=min_offset,
             maximum=max_offset,
             value=default_offset,
@@ -94,16 +98,16 @@ def process_image(uploaded_image: np.ndarray):
             visible=True
         )
         # Return the initial solution, updated slider config, solver instance, and default channel mode
-        return initial_solution, slider_update, solver, gr.update(value=default_channel_mode)
+        return initial_solution, slider_update, solver, gr.Radio(value=default_channel_mode)
 
     except ValueError as e:
         print(f"Error initializing solver: {e}")
         gr.Warning(f"Could not process image. Error: {e}")
-        return None, gr.update(visible=False), None, gr.update(value=default_channel_mode)
+        return None, gr.Slider(visible=False), None, gr.Radio(value=default_channel_mode)
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         gr.Error("An unexpected error occurred during image processing.")
-        return None, gr.update(visible=False), None, gr.update(value=default_channel_mode)
+        return None, gr.Slider(visible=False), None, gr.Radio(value=default_channel_mode)
 
 
 # --- Gradio Interface using Blocks ---
@@ -112,7 +116,8 @@ with gr.Blocks() as demo:
     gr.Markdown("Upload an autostereogram (Magic Eye image) to reveal the hidden 3D image. Adjust the offset slider to fine-tune the result.")
 
     # Store the solver instance in Gradio's state
-    solver_state = gr.State(None)
+    # Use gr.State() with value=None explicitly
+    solver_state = gr.State(value=None)
 
     with gr.Row():
         with gr.Column(scale=1):
@@ -127,7 +132,7 @@ with gr.Blocks() as demo:
                     ["examples/6.jpg"],
                     ["examples/7.jpg"],
                 ],
-                inputs=[image_input],
+                inputs=image_input,  # Updated for Gradio 4.x compatibility
                 label="Example Images"
             )
             channel_mode_radio = gr.Radio(
@@ -146,30 +151,35 @@ with gr.Blocks() as demo:
             image_output = gr.Image(label="Solved Image", type="numpy") # Ensure output type matches input for solve_and_display
 
     # --- Event Handling ---
-    # --- Event Handling ---
     # 1. When a new image is uploaded:
     image_input.change(
         fn=process_image,
-        inputs=[image_input],
-        outputs=[image_output, offset_slider, solver_state, channel_mode_radio], # Added channel_mode_radio output
-        show_progress="full"
+        inputs=image_input,
+        outputs=[image_output, offset_slider, solver_state, channel_mode_radio], 
+        show_progress="full",
+        api_name=False  # Disable API exposure for this event
     )
 
     # 2. When the slider value changes (on release):
     offset_slider.release(
         fn=solve_and_display,
-        inputs=[solver_state, offset_slider, channel_mode_radio], # Added channel_mode_radio input
-        outputs=[image_output],
-        show_progress="minimal"
+        inputs=[solver_state, offset_slider, channel_mode_radio],
+        outputs=image_output,
+        show_progress="minimal",
+        api_name=False  # Disable API exposure for this event
     )
 
     # 3. When the channel mode changes:
     channel_mode_radio.change(
         fn=solve_and_display,
-        inputs=[solver_state, offset_slider, channel_mode_radio], # Use current slider value
-        outputs=[image_output],
-        show_progress="minimal"
+        inputs=[solver_state, offset_slider, channel_mode_radio],
+        outputs=image_output,
+        show_progress="minimal",
+        api_name=False  # Disable API exposure for this event
     )
 
 if __name__ == "__main__":
-    demo.launch(share=True, show_error=True)
+    # For Hugging Face Spaces compatibility
+    demo.queue()  # Enable queuing for better handling of concurrent users
+    demo.launch(show_error=True)
+    demo.launch(show_error=True)
