@@ -20,6 +20,7 @@ from scipy.signal import fftconvolve
 def offset(img: np.ndarray) -> Tuple[int, np.ndarray, np.ndarray, np.ndarray]:
     """
     Calculates the offset that defines the stereoscopic effect.
+    Now selects the offset corresponding to the highest peak in the autocorrelation curve.
     """
     img = img - img.mean()
     ac: np.ndarray = fftconvolve(img, np.flipud(np.fliplr(img)), mode='same')
@@ -44,18 +45,47 @@ def offset(img: np.ndarray) -> Tuple[int, np.ndarray, np.ndarray, np.ndarray]:
     except (ValueError, FloatingPointError):
         idx = np.array([]) # Handle potential errors during calculation
 
+    # Calculate differences between consecutive peaks for compatibility with visualization
     diffs: np.ndarray = np.ediff1d(idx)
-    if diffs.size == 0:
+    
+    if idx.size == 0:
         # Fallback to image width if no significant peaks found
         return img.shape[1], ac_center_row, idx, diffs
-    # Use try-except for potential empty diffs if idx had <= 1 element
+    
     try:
-        max_diff = np.max(diffs)
-        # Ensure max_diff is a reasonable value (e.g., not larger than image width)
-        return min(max_diff, img.shape[1]), ac_center_row, idx, diffs
-    except ValueError:
-        # Fallback if diffs is empty, return image width and an empty array for the curve
-        return img.shape[1], np.array([]), np.array([]), np.array([])
+        # Find the index of the highest peak (ignoring the central peak)
+        center_idx = len(ac_center_row) // 2
+        # Avoid the central peak by excluding a small region around the center
+        valid_peaks_mask = np.abs(idx - center_idx) > 20
+        
+        if np.any(valid_peaks_mask):
+            valid_peaks = idx[valid_peaks_mask]
+            valid_peaks_values = ac_center_row[valid_peaks]
+            
+            if valid_peaks.size > 0:
+                # Find the index of the highest peak among valid peaks
+                highest_peak_idx = valid_peaks[np.argmax(valid_peaks_values)]
+                
+                # Calculate the offset as the distance from center to highest peak
+                best_offset = abs(highest_peak_idx - center_idx)
+                
+                # Ensure best_offset is a reasonable value (e.g., not larger than image width)
+                return min(best_offset, img.shape[1]), ac_center_row, idx, diffs
+        
+        # If no valid peaks or processing failed, fall back to original max_diff method
+        if diffs.size > 0:
+            max_diff = np.max(diffs)
+            return min(max_diff, img.shape[1]), ac_center_row, idx, diffs
+        else:
+            return img.shape[1], ac_center_row, idx, diffs
+            
+    except (ValueError, IndexError) as e:
+        # Fallback if any calculation fails
+        print(f"Error finding highest peak: {e}")
+        if diffs.size > 0:
+            max_diff = np.max(diffs)
+            return min(max_diff, img.shape[1]), ac_center_row, idx, diffs
+        return img.shape[1], ac_center_row, idx, diffs
 
 def shift_pic(img: np.ndarray, gap: int) -> np.ndarray:
     """

@@ -59,7 +59,37 @@ def create_autocorrelation_plot(autocorrelation_curve: np.ndarray, current_slide
             # Shift peak indices to match the shifted x-axis
             center_idx = len(autocorrelation_curve) // 2
             shifted_peak_indices = peak_indices - center_idx
-            ax.scatter(shifted_peak_indices, peak_y_values, color='g', marker='o', label='Detected Peaks')
+            
+            # Find which peak corresponds to the selected offset
+            selected_peak_idx = None
+            for i, peak_idx in enumerate(peak_indices):
+                if abs(peak_idx - center_idx) == solver_calculated_offset:
+                    selected_peak_idx = i
+                    break
+            
+            # Use different colors for the selected peak vs other peaks
+            colors = ['g'] * len(shifted_peak_indices)
+            sizes = [30] * len(shifted_peak_indices)
+            if selected_peak_idx is not None:
+                colors[selected_peak_idx] = 'r'  # Highlight the selected peak in red
+                sizes[selected_peak_idx] = 60  # Make the selected peak larger
+                
+            # Plot all peaks
+            ax.scatter(shifted_peak_indices, peak_y_values, c=colors, s=sizes, marker='o', label='Detected Peaks')
+            
+            # Specifically label the peak used for the selected offset
+            if selected_peak_idx is not None:
+                peak_idx = peak_indices[selected_peak_idx]
+                shifted_peak_idx = shifted_peak_indices[selected_peak_idx]
+                peak_val = peak_y_values[selected_peak_idx]
+                ax.annotate(f"Selected Peak: {solver_calculated_offset}", 
+                           xy=(shifted_peak_idx, peak_val), 
+                           xytext=(shifted_peak_idx, peak_val*1.1),
+                           fontsize=9,
+                           color='red',
+                           ha='center',
+                           bbox=dict(boxstyle='round,pad=0.3', fc='yellow', alpha=0.7),
+                           arrowprops=dict(arrowstyle='->', color='red'))
             
             # Annotate the peak differences if there are consecutive peaks
             if peak_diffs.size > 0:
@@ -157,7 +187,7 @@ def solve_and_display(solver_instance: InteractiveSolver, offset_value: int, cha
 
 def process_image(uploaded_image: np.ndarray):
     """Processes the uploaded image, initializes the solver, and sets up UI."""
-    default_channel_mode = "separate" # Default mode for initial solve
+    default_channel_mode = "average" # Default mode for initial solve
     if uploaded_image is None:
         # No image uploaded yet, return default/empty states
         # Return None for the plot as well
@@ -236,9 +266,9 @@ with gr.Blocks() as demo:
                 label="Example Images"
             )
             channel_mode_radio = gr.Radio(
-                ["separate", "average"],
+                ["average", "separate"],
                 label="Color Channel Mode",
-                value="separate",
+                value="average",
                 info="How to handle color channels. 'Separate' processes each independently. 'Average' converts to grayscale first."
             )
             offset_slider = gr.Slider(
