@@ -48,44 +48,51 @@ def offset(img: np.ndarray) -> Tuple[int, np.ndarray, np.ndarray, np.ndarray]:
     # Calculate differences between consecutive peaks for compatibility with visualization
     diffs: np.ndarray = np.ediff1d(idx)
     
-    if idx.size == 0:
-        # Fallback to image width if no significant peaks found
-        return img.shape[1], ac_center_row, idx, diffs
+    # Calculate differences between consecutive peaks for compatibility with visualization
+    diffs: np.ndarray = np.ediff1d(idx)
     
-    try:
-        # Find the index of the highest peak (ignoring the central peak)
-        center_idx = len(ac_center_row) // 2
-        # Avoid the central peak by excluding a small region around the center
-        valid_peaks_mask = np.abs(idx - center_idx) > 20
-        
-        if np.any(valid_peaks_mask):
-            valid_peaks = idx[valid_peaks_mask]
-            valid_peaks_values = ac_center_row[valid_peaks]
+    raw_offset: int = img.shape[1] # Default fallback to image width
+
+    if idx.size > 0:
+        try:
+            # Find the index of the highest peak (ignoring the central peak)
+            center_idx = len(ac_center_row) // 2
+            # Avoid the central peak by excluding a small region around the center
+            valid_peaks_mask = np.abs(idx - center_idx) > 20
             
-            if valid_peaks.size > 0:
-                # Find the index of the highest peak among valid peaks
-                highest_peak_idx = valid_peaks[np.argmax(valid_peaks_values)]
+            if np.any(valid_peaks_mask):
+                valid_peaks = idx[valid_peaks_mask]
+                valid_peaks_values = ac_center_row[valid_peaks]
                 
-                # Calculate the offset as the distance from center to highest peak
-                best_offset = abs(highest_peak_idx - center_idx)
-                
-                # Ensure best_offset is a reasonable value (e.g., not larger than image width)
-                return min(best_offset, img.shape[1]), ac_center_row, idx, diffs
-        
-        # If no valid peaks or processing failed, fall back to original max_diff method
-        if diffs.size > 0:
-            max_diff = np.max(diffs)
-            return min(max_diff, img.shape[1]), ac_center_row, idx, diffs
-        else:
-            return img.shape[1], ac_center_row, idx, diffs
+                if valid_peaks.size > 0:
+                    # Find the index of the highest peak among valid peaks
+                    highest_peak_idx = valid_peaks[np.argmax(valid_peaks_values)]
+                    
+                    # Calculate the offset as the distance from center to highest peak
+                    raw_offset = abs(highest_peak_idx - center_idx)
             
-    except (ValueError, IndexError) as e:
-        # Fallback if any calculation fails
-        print(f"Error finding highest peak: {e}")
-        if diffs.size > 0:
-            max_diff = np.max(diffs)
-            return min(max_diff, img.shape[1]), ac_center_row, idx, diffs
-        return img.shape[1], ac_center_row, idx, diffs
+            # If no valid peaks or processing failed, or if raw_offset from peak is too small, consider max_diff
+            if diffs.size > 0:
+                if raw_offset < 10 and np.max(diffs) >= 10: # If peak offset is small, but max_diff is good
+                    raw_offset = np.max(diffs)
+                elif raw_offset < 10 and np.max(diffs) < 10: # If both are small
+                    raw_offset = img.shape[1] # Fallback to image width
+                # Else, if raw_offset is already >= 10, keep it.
+                # Or if raw_offset was not set by valid_peaks, it remains img.shape[1]
+            
+        except (ValueError, IndexError) as e:
+            print(f"Error finding highest peak: {e}")
+            raw_offset = img.shape[1] # Fallback if any calculation fails
+
+    # Apply the minimum offset constraint
+    # The offset should be at least 10, unless the image width itself is less than 10.
+    # In that case, the offset should be at least 1, or the image width if it's 0.
+    if img.shape[1] < 10:
+        final_offset = max(1, min(raw_offset, img.shape[1])) # Clamp to image width, ensure at least 1
+    else:
+        final_offset = max(10, min(raw_offset, img.shape[1])) # Clamp to image width, ensure at least 10
+
+    return final_offset, ac_center_row, idx, diffs
 
 def shift_pic(img: np.ndarray, gap: int) -> np.ndarray:
     """

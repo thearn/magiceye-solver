@@ -193,7 +193,7 @@ def process_image(uploaded_image: np.ndarray):
     if uploaded_image is None:
         # No image uploaded yet, return default/empty states
         # Return None for the plot as well
-        return None, gr.Slider(visible=False), None, gr.Radio(value=default_channel_mode), None # Also return None for the plot
+        return None, gr.Slider(visible=False), None, gr.Radio(value=default_channel_mode), None, gr.Button(visible=False)
 
     try:
         # Initialize the solver with the uploaded image
@@ -230,17 +230,35 @@ def process_image(uploaded_image: np.ndarray):
             interactive=True,
             visible=True
         )
-        # Return the initial solution, updated slider config, solver instance, default channel mode, and initial plot
-        return initial_solution, slider_update, solver, gr.Radio(value=default_channel_mode), gr.Plot(value=initial_plot_figure, visible=True)
+        # Return the initial solution, updated slider config, solver instance, default channel mode, initial plot, and button visibility
+        return initial_solution, slider_update, solver, gr.Radio(value=default_channel_mode), gr.Plot(value=initial_plot_figure, visible=True), gr.Button(visible=True)
 
     except ValueError as e:
         print(f"Error initializing solver: {e}")
         gr.Warning(f"Could not process image. Error: {e}")
-        return None, gr.Slider(visible=False), None, gr.Radio(value=default_channel_mode), None
+        return None, gr.Slider(visible=False), None, gr.Radio(value=default_channel_mode), None, gr.Button(visible=False)
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         gr.Error("An unexpected error occurred during image processing.")
-        return None, gr.Slider(visible=False), None, gr.Radio(value=default_channel_mode), None    # --- Gradio Interface using Blocks ---
+        return None, gr.Slider(visible=False), None, gr.Radio(value=default_channel_mode), None, gr.Button(visible=False)
+
+# Define a function to reset the slider to the default offset
+def reset_to_default_offset(solver_instance: InteractiveSolver, channel_mode: str) -> Tuple[np.ndarray, plt.Figure, gr.update]:
+    if solver_instance is None:
+        # If no solver instance, return empty states and hide slider
+        return np.zeros((100, 100), dtype=np.uint8), create_autocorrelation_plot(np.array([]), 0, 0, np.array([]), np.array([])), gr.update(visible=False)
+
+    default_offset = solver_instance.default_offset
+    
+    # Re-solve and display with the default offset
+    solved_image, plot_figure = solve_and_display(solver_instance, default_offset, channel_mode)
+    
+    # Update the slider to reflect the default offset
+    updated_slider = gr.update(value=default_offset, label=f"Stereogram Offset (Default: {default_offset})", interactive=True, visible=True)
+    
+    return solved_image, plot_figure, updated_slider
+
+# --- Gradio Interface using Blocks ---
 with gr.Blocks() as demo:
     gr.Markdown("# Magic Eye Solver")
     gr.Markdown("Upload an autostereogram (Magic Eye image) to reveal the hidden 3D image. Adjust the offset slider to fine-tune the result.")
@@ -256,6 +274,7 @@ with gr.Blocks() as demo:
                 examples=[
                     ["examples/1.jpg"],
                     ["examples/2.jpg"],
+                    ["examples/3.jpg"],
                     ["examples/3.jpg"],
                     ["examples/4.jpg"],
                     ["examples/5.gif"],
@@ -280,13 +299,14 @@ with gr.Blocks() as demo:
                 interactive=True,
                 visible=False # Initially hidden
             )
+            reset_button = gr.Button("Reset Offset", visible=False) # Initially hidden
 
     # --- Event Handling ---
     # 1. When a new image is uploaded:
     image_input.change(
         fn=process_image,
         inputs=image_input,
-        outputs=[image_output, offset_slider, solver_state, channel_mode_radio, autocorrelation_plot],
+        outputs=[image_output, offset_slider, solver_state, channel_mode_radio, autocorrelation_plot, reset_button],
         show_progress="full",
         api_name=False  # Disable API exposure for this event
     )
@@ -313,6 +333,15 @@ with gr.Blocks() as demo:
         outputs=[image_output, autocorrelation_plot],
         show_progress="minimal",
         api_name=False  # Disable API exposure for this event
+    )
+
+    # 4. When the reset button is clicked:
+    reset_button.click(
+        fn=reset_to_default_offset,
+        inputs=[solver_state, channel_mode_radio],
+        outputs=[image_output, autocorrelation_plot, offset_slider],
+        show_progress="minimal",
+        api_name=False
     )
 
 if __name__ == "__main__":
