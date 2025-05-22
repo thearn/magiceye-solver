@@ -33,7 +33,7 @@ jobs:
         git lfs install
         
         # Clone the Hugging Face Space repository
-        git clone https://huggingface.co/spaces/thearn/magiceye-solver hf-space
+        git clone https://huggingface.co/spaces/${{ secrets.HF_USERNAME }}/${{ secrets.HF_SPACE_NAME }} hf-space
         cd hf-space
         
         # Configure git with a generic user (required for pushing)
@@ -52,5 +52,5 @@ jobs:
         else
           # Commit and push changes
           git commit -m "Auto-deploy from GitHub Actions"
-          git push https://huggingface-user:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/thearn/magiceye-solver
+          git push https://huggingface-user:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/${{ secrets.HF_USERNAME }}/${{ secrets.HF_SPACE_NAME }}
         fi
