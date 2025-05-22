@@ -25,3 +25,32 @@ jobs:
     - name: Test with pytest
       run: |
         pytest
+    
+    - name: Deploy to Hugging Face Spaces
+      if: success() && github.ref == 'refs/heads/main'
+      run: |
+        # Install git-lfs if not already available
+        git lfs install
+        
+        # Clone the Hugging Face Space repository
+        git clone https://huggingface.co/spaces/thearn/magiceye-solver hf-space
+        cd hf-space
+        
+        # Configure git with a generic user (required for pushing)
+        git config user.email "action@github.com"
+        git config user.name "GitHub Action"
+        
+        # Copy files from the main repo (excluding .git and other unnecessary files)
+        rsync -av --exclude='.git' --exclude='hf-space' --exclude='.github' ../ ./
+        
+        # Add all changes
+        git add .
+        
+        # Check if there are any changes to commit
+        if git diff --staged --quiet; then
+          echo "No changes to deploy"
+        else
+          # Commit and push changes
+          git commit -m "Auto-deploy from GitHub Actions"
+          git push https://huggingface-user:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/thearn/magiceye-solver
+        fi
