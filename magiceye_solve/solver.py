@@ -10,7 +10,7 @@ try:
     from skimage import exposure
     _SKIMAGE_AVAILABLE = True
 except ImportError:
-    # Ensure these are None if import fails, so checks later don't raise NameError
+    # skimage fallback
     ski_filter = None
     exposure = None
     _SKIMAGE_AVAILABLE = False
@@ -24,51 +24,42 @@ def offset(img: np.ndarray) -> Tuple[int, np.ndarray, np.ndarray, np.ndarray]:
     """
     img = img - img.mean()
     ac: np.ndarray = fftconvolve(img, np.flipud(np.fliplr(img)), mode='same')
-    # Ensure ac has the expected dimension before indexing
+    # check ac shape
     if ac.ndim < 1 or ac.shape[0] < 1:
-         # Handle case where convolution result is unexpected (e.g., empty image input)
-         return img.shape[1], np.array([]), np.array([]), np.array([]) # Fallback
+         return img.shape[1], np.array([]), np.array([]), np.array([])
     ac_center_row = ac[int(ac.shape[0] / 2)]
-    # Check if center row is valid before proceeding
+    # check center row valid
     if ac_center_row.size == 0 or ac_center_row.std() == 0:
-         return img.shape[1], np.array([]), np.array([]), np.array([]) # Fallback if row is empty or has no variation
+         return img.shape[1], np.array([]), np.array([]), np.array([])
 
-    # Use try-except for division by zero or invalid value in std
     try:
         threshold = 3 * ac_center_row.std()
         median_val = np.median(ac_center_row)
-        # Ensure threshold is a finite number
+        # threshold sanity check
         if not np.isfinite(threshold) or threshold <= 0:
-             idx = np.array([]) # No valid peaks if std dev is zero or invalid
+             idx = np.array([])
         else:
              idx: np.ndarray = np.where(ac_center_row - median_val > threshold)[0]
     except (ValueError, FloatingPointError):
-        idx = np.array([]) # Handle potential errors during calculation
+        idx = np.array([])
 
-    # Calculate differences between consecutive peaks for compatibility with visualization
+    # peak diffs for viz
     diffs: np.ndarray = np.ediff1d(idx)
-    
-    raw_offset: int = img.shape[1] # Default fallback to image width
+    raw_offset: int = img.shape[1]
 
     if idx.size > 0:
         try:
-            # Find the index of the highest peak (ignoring the central peak)
+            # skip center peak
             center_idx = len(ac_center_row) // 2
-            # Avoid the central peak by excluding a small region around the center
             valid_peaks_mask = np.abs(idx - center_idx) > 20
-            
             if np.any(valid_peaks_mask):
                 valid_peaks = idx[valid_peaks_mask]
                 valid_peaks_values = ac_center_row[valid_peaks]
-                
                 if valid_peaks.size > 0:
-                    # Find the index of the highest peak among valid peaks
+                    # highest peak
                     highest_peak_idx = valid_peaks[np.argmax(valid_peaks_values)]
-                    
-                    # Calculate the offset as the distance from center to highest peak
                     raw_offset = abs(highest_peak_idx - center_idx)
-            
-            # If no valid peaks or processing failed, or if raw_offset from peak is too small, consider max_diff
+            # fallback to max diff if needed
             if diffs.size > 0:
                 if raw_offset < 10 and np.max(diffs) >= 10:
                     raw_offset = np.max(diffs)
@@ -77,7 +68,7 @@ def offset(img: np.ndarray) -> Tuple[int, np.ndarray, np.ndarray, np.ndarray]:
         except (ValueError, IndexError):
             raw_offset = img.shape[1]
 
-    # Apply the minimum offset constraint
+    # min offset constraint
     if img.shape[1] < 10:
         final_offset = max(1, min(raw_offset, img.shape[1]))
     else:
@@ -126,7 +117,7 @@ class InteractiveSolver:
         Args:
             image: The input image as a NumPy array.
         """
-        # Normalize image data to float [0, 1] if it's not already
+        # normalize to float [0, 1]
         if image.dtype == np.uint8:
             image = image.astype(float) / 255.0
         elif image.dtype == np.uint16:

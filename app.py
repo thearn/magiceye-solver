@@ -7,16 +7,9 @@ import matplotlib.pyplot as plt
 from magiceye_solve.solver import InteractiveSolver
 from typing import Tuple
 
-# Set warning mode to ignore or control certain unnecessary warnings
+# ignore gradio warnings
 import warnings
 warnings.filterwarnings("ignore", message=".*Trying to detect.*share=True.*")
-
-# Store the solver instance globally within the session state if possible,
-# or recreate it when needed. Gradio state management can be tricky.
-# For simplicity here, we might recreate it or pass it around.
-
-# Placeholder for the solver instance to avoid global state issues if possible
-# We will manage this within the Gradio interactions.
 
 def create_autocorrelation_plot(autocorrelation_curve: np.ndarray, current_slider_offset: int, solver_calculated_offset: int, peak_diffs: np.ndarray, peak_indices: np.ndarray = None) -> plt.Figure:
     """
@@ -128,17 +121,13 @@ def create_autocorrelation_plot(autocorrelation_curve: np.ndarray, current_slide
 def solve_and_display(solver_instance: InteractiveSolver, offset_value: int, channel_mode: str) -> Tuple[np.ndarray, plt.Figure]:
     """Solves the image with the given offset and channel mode, returns the result and the updated plot."""
     if solver_instance is None:
-        # Handle case where solver hasn't been initialized (e.g., no image uploaded)
-        # Return a blank image and an empty plot
-        return np.zeros((100, 100), dtype=np.uint8), create_autocorrelation_plot(np.array([]), 0, 0, np.array([]), np.array([])) # Example placeholder
+        # no solver, return blank
+        return np.zeros((100, 100), dtype=np.uint8), create_autocorrelation_plot(np.array([]), 0, 0, np.array([]), np.array([]))
 
-    # Ensure offset is an integer
     offset_value = int(offset_value)
-
-    # Call the solver with the selected channel mode
     solved_image = solver_instance.solve_with_offset(offset_value, channel_mode=channel_mode)
 
-    # Normalize and convert for display if necessary
+    # normalize for display
     if solved_image.size > 0:
         if solved_image.dtype == float:
             solved_image = np.clip(solved_image, np.min(solved_image), np.max(solved_image))
@@ -152,51 +141,42 @@ def solve_and_display(solver_instance: InteractiveSolver, offset_value: int, cha
     if solved_image.ndim == 2:
         solved_image = np.stack((solved_image,) * 3, axis=-1)
 
-    # Create and return the autocorrelation plot
     autocorrelation_plot_figure = create_autocorrelation_plot(
         solver_instance.autocorrelation_curve,
-        offset_value, # Current slider offset
-        solver_instance.default_offset, # Solver's calculated offset
+        offset_value,
+        solver_instance.default_offset,
         solver_instance.autocorrelation_peak_diffs,
-        solver_instance.autocorrelation_peak_indices  # Pass peak indices for visualization
+        solver_instance.autocorrelation_peak_indices
     )
 
     return solved_image, autocorrelation_plot_figure
 
 def process_image(uploaded_image: np.ndarray):
     """Processes the uploaded image, initializes the solver, and sets up UI."""
-    default_channel_mode = "average" # Default mode for initial solve
+    default_channel_mode = "average" # default mode
     if uploaded_image is None:
-        # No image uploaded yet, return default/empty states
-        # Return None for the plot as well
+        # no image, return empty ui
         return None, gr.Slider(visible=False), None, gr.Radio(value=default_channel_mode), None, gr.Button(visible=False)
 
     try:
-        # Initialize the solver with the uploaded image
-        # The InteractiveSolver handles normalization internally now
+        # init solver
         solver = InteractiveSolver(uploaded_image)
 
-        # Determine slider parameters
         min_offset = 1
-        # Set max offset to same value used for plot x-axis limit
         max_offset = min(700, solver.default_offset * 2)
         default_offset = solver.default_offset
-        # Ensure default is within bounds
         default_offset = max(min_offset, min(default_offset, max_offset))
 
-        # Perform initial solve with the default offset and default channel mode
         initial_solution = solver.solve_with_offset(default_offset, default_channel_mode)
 
-        # Create the initial autocorrelation plot
         initial_plot_figure = create_autocorrelation_plot(
             solver.autocorrelation_curve,
-            default_offset, # Current slider offset (initially default)
-            solver.default_offset, # Solver's calculated offset
+            default_offset,
+            solver.default_offset,
             solver.autocorrelation_peak_diffs,
-            solver.autocorrelation_peak_indices  # Pass peak indices for visualization
+            solver.autocorrelation_peak_indices
         )
 
-        # Update UI elements: show solved image, configure and show slider, set channel mode, and show plot
         slider_update = gr.Slider(
             minimum=min_offset,
             maximum=max_offset,
@@ -206,7 +186,6 @@ def process_image(uploaded_image: np.ndarray):
             interactive=True,
             visible=True
         )
-        # Return the initial solution, updated slider config, solver instance, default channel mode, initial plot, and button visibility
         return initial_solution, slider_update, solver, gr.Radio(value=default_channel_mode), gr.Plot(value=initial_plot_figure, visible=True), gr.Button(visible=True)
 
     except ValueError as e:
@@ -216,29 +195,22 @@ def process_image(uploaded_image: np.ndarray):
         print(f"An unexpected error occurred: {e}")
         return None, gr.Slider(visible=False), None, gr.Radio(value=default_channel_mode), None, gr.Button(visible=False)
 
-# Define a function to reset the slider to the default offset
 def reset_to_default_offset(solver_instance: InteractiveSolver, channel_mode: str) -> Tuple[np.ndarray, plt.Figure, gr.update]:
     if solver_instance is None:
-        # If no solver instance, return empty states and hide slider
+        # no solver, hide slider
         return np.zeros((100, 100), dtype=np.uint8), create_autocorrelation_plot(np.array([]), 0, 0, np.array([]), np.array([])), gr.update(visible=False)
 
     default_offset = solver_instance.default_offset
-    
-    # Re-solve and display with the default offset
     solved_image, plot_figure = solve_and_display(solver_instance, default_offset, channel_mode)
-    
-    # Update the slider to reflect the default offset
     updated_slider = gr.update(value=default_offset, label=f"Stereogram Offset (Default: {default_offset})", interactive=True, visible=True)
-    
     return solved_image, plot_figure, updated_slider
 
-# --- Gradio Interface using Blocks ---
+# gradio ui
 with gr.Blocks() as demo:
     gr.Markdown("# Magic Eye Solver")
     gr.Markdown("Upload an autostereogram (Magic Eye image) to reveal the hidden 3D image. Adjust the offset slider to fine-tune the result.")
 
-    # Store the solver instance in Gradio's state
-    # Use gr.State() with value=None explicitly
+    # solver state
     solver_state = gr.State(value=None)
 
     with gr.Row():
@@ -264,49 +236,45 @@ with gr.Blocks() as demo:
                 info="How to handle color channels. 'Separate' processes each independently. 'Average' converts to grayscale first."
             )
         with gr.Column(scale=1):
-            image_output = gr.Image(label="Solved Image", type="numpy", height=400) # Ensure output type matches input for solve_and_display
+            image_output = gr.Image(label="Solved Image", type="numpy", height=400)
             autocorrelation_plot = gr.Plot(label="Autocorrelation Curve", visible=False)
             offset_slider = gr.Slider(
-                minimum=1, maximum=100, step=1, # Placeholder values
+                minimum=1, maximum=100, step=1, # placeholder values
                 label="Stereogram Offset",
                 interactive=True,
-                visible=False # Initially hidden
+                visible=False # hidden by default
             )
-            reset_button = gr.Button("Reset Offset", visible=False) # Initially hidden
+            reset_button = gr.Button("Reset Offset", visible=False) # hidden by default
 
-    # --- Event Handling ---
-    # 1. When a new image is uploaded:
+    # event handlers
     image_input.change(
         fn=process_image,
         inputs=image_input,
         outputs=[image_output, offset_slider, solver_state, channel_mode_radio, autocorrelation_plot, reset_button],
         show_progress="full",
-        api_name=False  # Disable API exposure for this event
+        api_name=False
     )
 
     def solve_and_display_only(solver_instance, offset_value, channel_mode):
         solved_image, plot_figure = solve_and_display(solver_instance, offset_value, channel_mode)
         return solved_image, plot_figure
 
-    # 2. When the slider value changes (on release):
     offset_slider.release(
         fn=solve_and_display_only,
         inputs=[solver_state, offset_slider, channel_mode_radio],
         outputs=[image_output, autocorrelation_plot],
         show_progress="minimal",
-        api_name=False  # Disable API exposure for this event
+        api_name=False
     )
 
-    # 3. When the channel mode changes:
     channel_mode_radio.change(
         fn=solve_and_display_only,
         inputs=[solver_state, offset_slider, channel_mode_radio],
         outputs=[image_output, autocorrelation_plot],
         show_progress="minimal",
-        api_name=False  # Disable API exposure for this event
+        api_name=False
     )
 
-    # 4. When the reset button is clicked:
     reset_button.click(
         fn=reset_to_default_offset,
         inputs=[solver_state, channel_mode_radio],
@@ -315,10 +283,10 @@ with gr.Blocks() as demo:
         api_name=False
     )
 
-    gr.Markdown("---") # Separator
+    gr.Markdown("---")
     gr.Markdown("Find this project on [GitHub](https://github.com/thearn/magiceye-solver)")
 
 if __name__ == "__main__":
-    # For Hugging Face Spaces compatibility
-    demo.queue()  # Enable queuing for better handling of concurrent users
+    # hf spaces compatibility
+    demo.queue()
     demo.launch(show_error=True)
