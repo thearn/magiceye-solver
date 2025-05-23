@@ -22,6 +22,9 @@ def offset(img: np.ndarray) -> Tuple[int, np.ndarray, np.ndarray, np.ndarray]:
     Calculates the offset that defines the stereoscopic effect.
     Now selects the offset corresponding to the highest peak in the autocorrelation curve.
     """
+    # Handle empty or 1D arrays gracefully
+    if img.size == 0 or img.ndim < 2:
+        return 0, np.array([]), np.array([]), np.array([])
     img = img - img.mean()
     ac: np.ndarray = fftconvolve(img, np.flipud(np.fliplr(img)), mode='same')
     # check ac shape
@@ -129,6 +132,10 @@ class InteractiveSolver:
         self.image: np.ndarray = image
         self.shape: Tuple[int, ...] = image.shape
         self.c: int = 1
+
+        # Additional check for >3 dimensions or unsupported 3D
+        if image.ndim != 2 and not (image.ndim == 3 and image.shape[2] in [1, 3, 4]):
+            raise ValueError(f"Unsupported image shape: {self.shape}")
 
         if len(self.shape) >= 3 and self.shape[2] in [3, 4]:
             self.m, self.n, self.c = self.shape[0], self.shape[1], self.shape[2]
