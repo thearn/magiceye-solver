@@ -140,34 +140,17 @@ def solve_and_display(solver_instance: InteractiveSolver, offset_value: int, cha
 
     # Normalize and convert for display if necessary
     if solved_image.size > 0:
-        # Check if normalization is needed (solver might return float)
         if solved_image.dtype == float:
-             # Basic normalization assuming range isn't drastically outside [0,1] after filters
-             solved_image = np.clip(solved_image, np.min(solved_image), np.max(solved_image)) # Clip potential outliers
-             min_val, max_val = np.min(solved_image), np.max(solved_image)
-             if max_val > min_val:
-                  solved_image = (solved_image - min_val) / (max_val - min_val)
-             solved_image = (solved_image * 255).astype(np.uint8)
-        # Handle cases where the output might be multi-channel concatenated
-        # Gradio's Image component expects HWC format.
-        # If solver returns M x (N*C), we might need reshaping or averaging.
-        # Assuming solver returns grayscale intensity map for now.
-        # If it returns M x (N*C), we need to decide how to display it.
-        # Let's assume solve_with_offset returns a displayable grayscale image for now.
-        # If solve_with_offset returns concatenated color channels, reshaping is needed:
-        # if solver_instance.color_image and solved_image.shape[1] == solver_instance.n * solver_instance.c:
-        #     final_width_per_channel = solved_image.shape[1] // solver_instance.c
-        #     solved_image = solved_image.reshape((solver_instance.m, solver_instance.c, final_width_per_channel))
-        #     solved_image = np.transpose(solved_image, (0, 2, 1)) # Reshape to HWC if needed by Gradio
-
+            solved_image = np.clip(solved_image, np.min(solved_image), np.max(solved_image))
+            min_val, max_val = np.min(solved_image), np.max(solved_image)
+            if max_val > min_val:
+                solved_image = (solved_image - min_val) / (max_val - min_val)
+            solved_image = (solved_image * 255).astype(np.uint8)
     else:
-        # Return a small blank image if solving failed
         solved_image = np.zeros((100, 100), dtype=np.uint8)
 
-    # Handle potential single-channel output from 'average' mode for display
     if solved_image.ndim == 2:
-        # Convert grayscale to RGB for consistent display in Gradio Image component
-        solved_image = np.stack((solved_image,)*3, axis=-1)
+        solved_image = np.stack((solved_image,) * 3, axis=-1)
 
     # Create and return the autocorrelation plot
     autocorrelation_plot_figure = create_autocorrelation_plot(
@@ -228,11 +211,9 @@ def process_image(uploaded_image: np.ndarray):
 
     except ValueError as e:
         print(f"Error initializing solver: {e}")
-        gr.Warning(f"Could not process image. Error: {e}")
         return None, gr.Slider(visible=False), None, gr.Radio(value=default_channel_mode), None, gr.Button(visible=False)
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
-        gr.Error("An unexpected error occurred during image processing.")
         return None, gr.Slider(visible=False), None, gr.Radio(value=default_channel_mode), None, gr.Button(visible=False)
 
 # Define a function to reset the slider to the default offset
@@ -303,10 +284,8 @@ with gr.Blocks() as demo:
         api_name=False  # Disable API exposure for this event
     )
 
-    # Define a function that only updates the plot and image, not the slider range
     def solve_and_display_only(solver_instance, offset_value, channel_mode):
         solved_image, plot_figure = solve_and_display(solver_instance, offset_value, channel_mode)
-        # We don't update the slider range here, just return the solved image and plot
         return solved_image, plot_figure
 
     # 2. When the slider value changes (on release):
