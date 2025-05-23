@@ -5,3 +5,4 @@ pytest
 pooch
 scikit-image
 gradio>=4.44.1
+pytest-cov
