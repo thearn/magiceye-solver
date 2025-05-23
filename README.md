@@ -12,6 +12,7 @@ pinned: false
 
 [![Codecov](https://codecov.io/gh/thearn/magiceye-solver/branch/main/graph/badge.svg)](https://codecov.io/gh/thearn/magiceye-solver)
 [![Hugging Face Spaces](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face%20Spaces-Magic%20Eye%20Solver-blue)](https://huggingface.co/spaces/thearn/magiceye-solver)
+![Build Status](https://github.com/thearn/magiceye-solver/actions/workflows/python-test.yml/badge.svg)
 
 ![Alt text](http://i.imgur.com/AUmpOSr.png "Example" )
 

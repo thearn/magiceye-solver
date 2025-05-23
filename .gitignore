@@ -6,4 +6,5 @@
 /dist
 *egg-info
 *solution.png
-.coverage
+.coverage*
+coverage.xml
