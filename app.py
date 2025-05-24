@@ -11,6 +11,9 @@ from typing import Tuple
 import warnings
 warnings.filterwarnings("ignore", message=".*Trying to detect.*share=True.*")
 
+# constants
+MAX_OFFSET_DISPLAY_LIMIT = 700 # max value for display and slider range for offset
+
 def create_autocorrelation_plot(autocorrelation_curve: np.ndarray, current_slider_offset: int, solver_calculated_offset: int, peak_diffs: np.ndarray, peak_indices: np.ndarray = None) -> plt.Figure:
     """
     Generates a matplotlib plot of the autocorrelation curve with vertical lines
@@ -67,9 +70,6 @@ def create_autocorrelation_plot(autocorrelation_curve: np.ndarray, current_slide
                 colors[selected_peak_idx] = 'r'  # Highlight the selected peak in red
                 sizes[selected_peak_idx] = 60  # Make the selected peak larger
                 
-            # Plot all peaks
-            #ax.scatter(shifted_peak_indices, peak_y_values, c=colors, s=sizes, marker='o', label='Detected Peaks')
-            
             # Specifically label the peak used for the selected offset
             if selected_peak_idx is not None:
                 peak_idx = peak_indices[selected_peak_idx]
@@ -102,7 +102,9 @@ def create_autocorrelation_plot(autocorrelation_curve: np.ndarray, current_slide
 
         # Set appropriate x-axis limits to focus on relevant part of the curve
         # Use this same limit for the slider's range
-        x_limit = min(700, current_slider_offset * 2, solver_calculated_offset * 2)
+        # ensure x_limit is at least a small positive number if offsets are 0 or very small
+        relevant_offset_max = max(10, current_slider_offset * 2, solver_calculated_offset * 2) # ensure a minimum sensible view
+        x_limit = min(MAX_OFFSET_DISPLAY_LIMIT, relevant_offset_max)
         ax.set_xlim([0, x_limit])
         
         # Add title and labels
@@ -163,7 +165,8 @@ def process_image(uploaded_image: np.ndarray):
         solver = InteractiveSolver(uploaded_image)
 
         min_offset = 1
-        max_offset = min(700, solver.default_offset * 2)
+        # ensure max_offset is at least min_offset and considers solver's suggestion
+        max_offset = min(MAX_OFFSET_DISPLAY_LIMIT, max(min_offset +1 , solver.default_offset * 2))
         default_offset = solver.default_offset
         default_offset = max(min_offset, min(default_offset, max_offset))
 
