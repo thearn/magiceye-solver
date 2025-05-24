@@ -14,7 +14,7 @@ pinned: false
 
 
 [![Hugging Face Spaces](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face%20Spaces-Magic%20Eye%20Solver-blue)](https://huggingface.co/spaces/thearn/magiceye-solver)
-![Build Status](https://github.com/thearn/magiceye-solver/actions/workflows/python-test.yml/badge.svg)
+![Build Status](https://github.com/thearn/magiceye-solver/actions/workflows/ci.yml/badge.svg)
 [![Codecov](https://codecov.io/gh/thearn/magiceye-solver/branch/main/graph/badge.svg)](https://codecov.io/gh/thearn/magiceye-solver)
 
 ![Alt text](http://i.imgur.com/AUmpOSr.png "Example" )
@@ -28,24 +28,36 @@ tends to be lost.
 Requirements:
 --------------
 
-- Python 3.5+
-- Numpy 1.5+
-- Scipy 0.12+
-- Matplotlib
-- scikit-image 0.8+ (required for post-processing)
+- Python 3.13+
+- Poetry (for dependency management)
 
 ## Installation:
 
-It's recommended that you install Numpy, Scipy, Matplotlib, and Gradio first, either
-using binary installers (windows) or using a package manager (apt-get,
-homebrew, etc.).
+This project uses Poetry for dependency management. Make sure you have Poetry installed first.
 
 1.  Clone the repository.
-2.  Install dependencies: `pip install -r requirements.txt`
+2.  Install dependencies using Poetry:
+    ```bash
+    poetry install
+    ```
 
-Tests can be run using `pytest` from the project's root directory:
+### Development:
+
+Tests can be run using Poetry:
 ```bash
-pytest
+poetry run pytest
+```
+
+Type checking can be run with:
+```bash
+poetry run mypy magiceye_solve
+```
+
+### For Hugging Face Deployment:
+
+The project automatically generates a `requirements.txt` file for Hugging Face compatibility using pip-tools:
+```bash
+poetry run pip-compile requirements.in
 ```
 
 
@@ -60,7 +72,7 @@ The easiest way to try out the solver is by running the included Gradio web appl
 1.  Make sure you have installed the dependencies (see Installation section).
 2.  Run the app from the project's root directory:
     ```bash
-    python app.py
+    poetry run python app.py
     ```
 3.  This will launch a web interface (usually at http://127.0.0.1:7860) where you can upload your own Magic Eye images or use the provided samples to see the solver in action.
 

@@ -1,0 +1,32 @@
+[project]
+name = "magiceye-solver"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Tristan Hearn",email = "tristanhearn@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "numpy (>=2.2.6,<3.0.0)",
+    "scipy (>=1.15.3,<2.0.0)",
+    "matplotlib (>=3.10.3,<4.0.0)",
+    "pooch (>=1.8.2,<2.0.0)",
+    "scikit-image (>=0.25.2,<0.26.0)",
+    "gradio (>=4.44.1)"
+]
+
+[tool.poetry]
+packages = [
+    { include = "magiceye_solve" }
+]
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.5"
+pytest-cov = "^6.1.1"
+pip-tools = "^7.4.1"
+mypy = "^1.15.0"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
