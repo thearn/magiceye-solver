@@ -32,11 +32,7 @@ Requirements:
 - Numpy 1.5+
 - Scipy 0.12+
 - Matplotlib
-
-Optional:
-
-- scikit-image 0.8+ (code will attempt to import filtering functions for additional post processing, but will not raise an error if
-library is not available)
+- scikit-image 0.8+ (required for post-processing)
 
 ## Installation:
 

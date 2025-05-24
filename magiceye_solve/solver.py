@@ -3,15 +3,8 @@ import numpy as np
 from numpy.typing import NDArray
 from scipy import ndimage
 
-try:
-    from skimage import filters as ski_filter
-    from skimage import exposure
-    _SKIMAGE_AVAILABLE = True
-except ImportError:
-    # skimage fallback
-    ski_filter = None
-    exposure = None
-    _SKIMAGE_AVAILABLE = False
+from skimage import filters as ski_filter
+from skimage import exposure
 
 from scipy.signal import fftconvolve
 
@@ -96,18 +89,15 @@ def shift_pic(img: np.ndarray, gap: int) -> np.ndarray:
 
 def post_process(img: np.ndarray) -> np.ndarray:
     """
-    Post-processes the results using skimage filters if available.
+    post-processes the results using skimage filters
     """
-    if not _SKIMAGE_AVAILABLE or img.size == 0:
+    if img.size == 0:
         return img
-    try:
-        filt_1: np.ndarray = ski_filter.prewitt(img)
-        if filt_1.size == 0 or np.all(filt_1 == filt_1[0, 0]):
-            return filt_1
-        filt_2: np.ndarray = exposure.equalize_hist(filt_1)
-        return filt_2
-    except Exception:
-        return img
+    filt_1: np.ndarray = ski_filter.prewitt(img)
+    if filt_1.size == 0 or np.all(filt_1 == filt_1[0, 0]):
+        return filt_1
+    filt_2: np.ndarray = exposure.equalize_hist(filt_1)
+    return filt_2
 
 class InteractiveSolver:
     """
@@ -171,8 +161,7 @@ class InteractiveSolver:
         try:
             filt_1 = ndimage.prewitt(shifted)
             filt_2 = ndimage.uniform_filter(filt_1, size=(5, 5))
-            if _SKIMAGE_AVAILABLE:
-                filt_2 = post_process(filt_2)
+            filt_2 = post_process(filt_2)
             
             # ensure correct width
             if filt_2.shape[1] > target_width:

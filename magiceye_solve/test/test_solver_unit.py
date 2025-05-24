@@ -57,15 +57,6 @@ class TestSolverFunctions(unittest.TestCase):
         out = solver.shift_pic(arr, 1)
         self.assertEqual(out.shape[1], 0)
 
-    def test_post_process_skimage_unavailable(self):
-        # Simulate skimage unavailable
-        orig = solver._SKIMAGE_AVAILABLE
-        solver._SKIMAGE_AVAILABLE = False
-        arr = np.random.rand(10, 10)
-        out = solver.post_process(arr)
-        np.testing.assert_array_equal(out, arr)
-        solver._SKIMAGE_AVAILABLE = orig
-
     def test_post_process_empty_and_all_same(self):
         arr = np.array([])
         out = solver.post_process(arr)
