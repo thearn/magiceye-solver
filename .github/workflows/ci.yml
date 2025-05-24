@@ -77,7 +77,7 @@ jobs:
       run: poetry install --no-interaction
     
     - name: Export requirements.txt for Hugging Face
-      run: poetry run pip-compile requirements.in
+      run: pip install pip-tools && pip-compile requirements.in
     
     - name: Deploy to Hugging Face Spaces
       run: |
