@@ -1,10 +1,8 @@
-from argparse import ArgumentParser
-from typing import Optional, Tuple, Any
+from typing import Tuple
 import numpy as np
+from numpy.typing import NDArray
 from scipy import ndimage
-import matplotlib as mpl
-mpl.use('Agg')
-import matplotlib.pyplot as plt
+
 try:
     from skimage import filters as ski_filter
     from skimage import exposure
@@ -70,7 +68,7 @@ def offset(img: np.ndarray) -> Tuple[int, np.ndarray, np.ndarray, np.ndarray]:
         
         # fallback to max difference between peaks if current raw_offset is too small
         if diffs.size > 0 and raw_offset < MIN_OFFSET_THRESHOLD:
-            max_diff = np.max(diffs)
+            max_diff : int = np.max(diffs)
             if max_diff >= MIN_OFFSET_THRESHOLD:
                 raw_offset = max_diff
             # if max_diff is also small, it implies no strong periodic pattern, keep img.shape[1] as fallback
@@ -150,6 +148,7 @@ class InteractiveSolver:
             self.color_image = False
         else:
             raise ValueError(f"Unsupported image shape: {self.shape}")
+        
 
         first_channel: np.ndarray = self.image[:, :, 0] if self.color_image else self.image
         if first_channel.size > 0 and first_channel.std() > 0:
@@ -160,14 +159,14 @@ class InteractiveSolver:
             self.autocorrelation_peak_indices: np.ndarray = np.array([])
             self.autocorrelation_peak_diffs: np.ndarray = np.array([])
 
-    def _process_single_channel(self, channel_data: np.ndarray, gap: int, target_width: int) -> np.ndarray:
+    def _process_single_channel(self, channel_data: np.ndarray, gap: int, target_width: int) -> NDArray[np.float64]:
         """Helper to process a single image channel."""
         if channel_data.size == 0 or channel_data.std() == 0.0:
-            return np.zeros((self.m, target_width), dtype=float)
+            return np.zeros((self.m, target_width), dtype=np.float64)
 
         shifted = shift_pic(channel_data, gap)
         if shifted.size == 0 or shifted.shape[1] == 0: # check if shifted result is empty or has zero width
-             return np.zeros((self.m, target_width), dtype=float)
+             return np.zeros((self.m, target_width), dtype=np.float64)
 
         try:
             filt_1 = ndimage.prewitt(shifted)
@@ -182,11 +181,11 @@ class InteractiveSolver:
                 # pad if narrower, though shift_pic should handle this by design
                 padding = np.zeros((filt_2.shape[0], target_width - filt_2.shape[1]), dtype=filt_2.dtype)
                 filt_2 = np.concatenate((filt_2, padding), axis=1)
-            return filt_2
+            return filt_2.astype(np.float64)
         except Exception:
-            return np.zeros((self.m, target_width), dtype=float)
+            return np.zeros((self.m, target_width), dtype=np.float64)
 
-    def solve_with_offset(self, user_offset: int, channel_mode: str = 'separate') -> np.ndarray:
+    def solve_with_offset(self, user_offset: int, channel_mode: str = 'separate') -> NDArray[np.float64]:
         """
         Solves the autostereogram using a specified offset and channel handling mode.
 
@@ -205,7 +204,7 @@ class InteractiveSolver:
             # for separate mode, it's multi-channel, original width per channel
             # however, shift_pic with 0 gap returns original image, so width isn't reduced
             # thus, n or n*c is appropriate.
-            return np.zeros((self.m, self.n if channel_mode == 'average' else self.n * self.c), dtype=float)
+            return np.zeros((self.m, self.n if channel_mode == 'average' else self.n * self.c), dtype=np.float64)
 
         effective_gap = min(int(user_offset), self.n)
         final_width_per_channel = max(0, self.n - effective_gap)
@@ -218,7 +217,7 @@ class InteractiveSolver:
             # prepare an empty array for the full solution
             # if final_width_per_channel is 0, the solution will also have 0 width for all channels
             solution_shape = (self.m, final_width_per_channel * self.c)
-            solution: np.ndarray = np.zeros(solution_shape, dtype=float)
+            solution: NDArray[np.float64] = np.zeros(solution_shape, dtype=np.float64)
             
             if final_width_per_channel == 0: # if no width, return empty solution early
                 return solution
@@ -241,4 +240,4 @@ class InteractiveSolver:
 
         else: # unknown channel_mode
             # fallback to a zero array with expected dimensions if mode is invalid
-            return np.zeros((self.m, final_width_per_channel * self.c), dtype=float)
+            return np.zeros((self.m, final_width_per_channel * self.c), dtype=np.float64)
